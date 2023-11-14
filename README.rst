@@ -1,4 +1,4 @@
-Fermi Relations
+Fermi relations
 ===============
 
 Relations and equalities regarding the fermionic algebra.
