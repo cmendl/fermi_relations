@@ -1,3 +1,7 @@
+.. image:: https://github.com/cmendl/fermi_relations/actions/workflows/ci.yml/badge.svg?branch=master
+  :target: https://github.com/cmendl/fermi_relations/actions/workflows/ci.yml
+
+
 Fermi relations
 ===============
 
