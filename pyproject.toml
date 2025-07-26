@@ -1,0 +1,20 @@
+[project]
+name = "fermi_relations"
+version = "0.0.1"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+authors = [{ name = "Christian B. Mendl", email = "christian.b.mendl@gmail.com" }]
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "scipy",
+]
+
+[project.urls]
+homepage = "https://github.com/cmendl/fermi_relations"
+repository = "https://github.com/cmendl/fermi_relations"
+issues = "https://github.com/cmendl/fermi_relations/issues"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
