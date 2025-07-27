@@ -28,10 +28,10 @@ class TestFock(unittest.TestCase):
         # number of modes
         nmodes = 7
         # number of particles
-        N = 3
+        nptcl = 3
         # random orthonormal states
         base = unitary_group.rvs(nmodes, random_state=rng)
-        orb = base[:, :N]
+        orb = base[:, :nptcl]
 
         # create Slater determinant
         psi = fr.slater_determinant(orb)
@@ -39,26 +39,43 @@ class TestFock(unittest.TestCase):
         self.assertAlmostEqual(np.linalg.norm(psi), 1, delta=1e-13)
         # must be eigenstate of number operator
         self.assertAlmostEqual(np.linalg.norm(
-            fr.total_number_op(nmodes) @ psi - N*psi), 0, delta=1e-13)
+            fr.total_number_op(nmodes) @ psi - nptcl*psi), 0, delta=1e-13)
         for i in range(nmodes):
             # number operator of an individual mode
             n = fr.orbital_number_op(base[:, i])
             self.assertAlmostEqual(np.linalg.norm(
-                n @ psi - (1 if i < N else 0) * psi), 0, delta=1e-13)
+                n @ psi - (1 if i < nptcl else 0) * psi), 0, delta=1e-13)
+
+    def test_free_fermion_hamiltonian(self):
+        """
+        Test relations of a free-fermion Hamiltonian.
+        """
+        rng = np.random.default_rng()
+
+        # number of modes
+        nmodes = 7
 
         # random single-particle Hamiltonian
         h = fr.crandn((nmodes, nmodes), rng)
         h = 0.5*(h + h.conj().T)
         # Hamiltonian on full Fock space
         clist, alist, _ = fr.construct_fermionic_operators(nmodes)
-        H = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
+        hfull = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
+
+        # number of particles
+        nptcl = 3
+        # random orthonormal states
+        base = unitary_group.rvs(nmodes, random_state=rng)
+        orb = base[:, :nptcl]
+        # create Slater determinant
+        psi = fr.slater_determinant(orb)
 
         # energy expectation value
-        en = np.vdot(psi, H.toarray() @ psi)
+        en = np.vdot(psi, hfull.toarray() @ psi)
         self.assertAlmostEqual(en, np.trace(orb.conj().T @ h @ orb))
 
         # time-evolved state
-        psi_t = expm(-1j*H.toarray()) @ psi
+        psi_t = expm(-1j*hfull.toarray()) @ psi
         # alternative construction: time-evolve single-particle states individually
         orb_t = expm(-1j*h) @ orb
         psi_t_alt = fr.slater_determinant(orb_t)
@@ -77,23 +94,24 @@ class TestFock(unittest.TestCase):
 
         # for a single-particle identity map, the overall base change matrix
         # should likewise be the identity map
-        UF = fr.fock_orbital_base_change(np.identity(nmodes))
-        self.assertEqual(spla.norm(UF - sparse.identity(2**nmodes)), 0)
+        ufull = fr.fock_orbital_base_change(np.identity(nmodes))
+        self.assertEqual(spla.norm(ufull - sparse.identity(2**nmodes)), 0)
 
         # random orthonormal states
-        U = unitary_group.rvs(nmodes, random_state=rng)
-        self.assertTrue(np.allclose(U.conj().T @ U, np.identity(nmodes)))
+        u = unitary_group.rvs(nmodes, random_state=rng)
+        self.assertTrue(np.allclose(u.conj().T @ u, np.identity(nmodes)))
 
-        UF = fr.fock_orbital_base_change(U)
+        ufull = fr.fock_orbital_base_change(u)
         # must likewise be unitary
-        self.assertAlmostEqual(spla.norm(UF.conj().T @ UF - sparse.identity(2**nmodes)), 0, delta=1e-13)
+        self.assertAlmostEqual(spla.norm(
+            ufull.conj().T @ ufull - sparse.identity(2**nmodes)), 0, delta=1e-13)
 
         idx = [0, 2, 3]
-        psi_ref = fr.slater_determinant(U[:, idx])
+        psi_ref = fr.slater_determinant(u[:, idx])
         # encode indices in binary format
         i = sum(1 << (nmodes - j - 1) for j in idx)
         # need to reshape since slicing returns matrix (different from numpy convention)
-        psi = np.reshape(UF[:, i].toarray(), -1)
+        psi = np.reshape(ufull[:, i].toarray(), -1)
         # compare
         self.assertTrue(np.allclose(psi, psi_ref))
 
@@ -110,31 +128,32 @@ class TestFock(unittest.TestCase):
         h = fr.crandn((nmodes, nmodes), rng)
         # identity even holds if 'h' is not Hermitian (and 'U' not unitary)
         # h = 0.5*(h + h.conj().T)
-        U = expm(-1j*h)
+        u = expm(-1j*h)
 
         clist, alist, _ = fr.construct_fermionic_operators(nmodes)
-        T = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
-        UF = expm(-1j*T.toarray())
+        tfull = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
+        ufull = expm(-1j*tfull.toarray())
 
         # reference base change matrix on full Fock space
-        UF_ref = fr.fock_orbital_base_change(U)
+        ufull_ref = fr.fock_orbital_base_change(u)
 
         # compare
-        self.assertTrue(np.allclose(UF, UF_ref.toarray()))
+        self.assertTrue(np.allclose(ufull, ufull_ref.toarray()))
 
     def test_skew_number_op(self):
         """
-        Test action of a number operator w.r.t. a non-orthogonal basis state on a Slater determinant.
+        Test action of a number operator w.r.t.
+        a non-orthogonal basis state on a Slater determinant.
         """
         rng = np.random.default_rng()
 
         # number of modes
         nmodes = 7
         # number of particles
-        N = 3
+        nptcl = 3
         # random orthonormal states
         base = unitary_group.rvs(nmodes, random_state=rng)
-        orb = base[:, :N]
+        orb = base[:, :nptcl]
 
         # create Slater determinant
         psi = fr.slater_determinant(orb)
@@ -146,7 +165,7 @@ class TestFock(unittest.TestCase):
 
         # manually construct sum of Slater determinants by projecting one orbital at a time onto 'x'
         n_psi = 0
-        for i in range(N):
+        for i in range(nptcl):
             n_orbs_i = np.concatenate((orb[:, :i],
                                        np.reshape(np.vdot(x, orb[:, i]) * x, (nmodes, 1)),
                                        orb[:, i+1:]), axis=1)

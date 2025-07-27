@@ -31,7 +31,8 @@ class TestCommutators(unittest.TestCase):
         x /= np.linalg.norm(x)
         c = fr.orbital_create_op(x)
         a = fr.orbital_annihil_op(x)
-        self.assertAlmostEqual(spla.norm(anti_comm(c, a) - sparse.identity(2**nmodes)), 0, delta=1e-14)
+        self.assertAlmostEqual(spla.norm(
+            anti_comm(c, a) - sparse.identity(2**nmodes)), 0, delta=1e-14)
 
     def test_comm_n_a(self):
         """
