@@ -43,6 +43,32 @@ class TestMajorana(unittest.TestCase):
                     delta = (1 if i == j else 0)
                     self.assertEqual((mi @ mj).trace() / 2**nmodes, delta)
 
+    def test_kinetic_hopping(self):
+        """
+        Express the kinetic hopping operator in terms of Majorana operators.
+        """
+        for nmodes in range(2, 8):
+            clist, alist, _ = fr.construct_fermionic_operators(nmodes)
+            mlist = fr.construct_majorana_operators(nmodes)
+            for i in range(nmodes):
+                for j in range(nmodes):
+                    if i == j:
+                        continue
+                    tkin_ref = clist[i] @ alist[j] + clist[j] @ alist[i]
+                    tkin_maj = 0.5j * (mlist[2*i] @ mlist[2*j+1] + mlist[2*j] @ mlist[2*i+1])
+                    self.assertEqual(spla.norm(tkin_maj - tkin_ref), 0)
+
+    def test_number_op(self):
+        """
+        Express the fermionic number operator in terms of Majorana operators.
+        """
+        for nmodes in range(1, 8):
+            _, _, nlist = fr.construct_fermionic_operators(nmodes)
+            mlist = fr.construct_majorana_operators(nmodes)
+            for i, n_ref in enumerate(nlist):
+                n_maj = 0.5 * (sparse.identity(2**nmodes) + 1j * mlist[2*i] @ mlist[2*i+1])
+                self.assertEqual(spla.norm(n_maj - n_ref), 0)
+
     def test_free_fermion_hamiltonian(self):
         """
         Test relations of a free-fermion Hamiltonian in the Majorana representation.
@@ -50,8 +76,8 @@ class TestMajorana(unittest.TestCase):
         Reference:
             Adrian Chapman and Steven T. Flammia
             Characterization of solvable spin models via graph invariants
-        	Quantum 4, 278 (2020)
-        	arXiv:2003.05465
+            Quantum 4, 278 (2020)
+            arXiv:2003.05465
         """
         rng = np.random.default_rng()
 

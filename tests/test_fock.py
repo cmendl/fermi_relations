@@ -20,8 +20,7 @@ class TestFock(unittest.TestCase):
 
     def test_slater_determinant(self):
         """
-        Test Slater determinant construction by simulating
-        quantum time evolution of a Slater determinant in two alternative ways.
+        Test Slater determinant construction.
         """
         rng = np.random.default_rng()
 
@@ -32,7 +31,6 @@ class TestFock(unittest.TestCase):
         # random orthonormal states
         base = unitary_group.rvs(nmodes, random_state=rng)
         orb = base[:, :nptcl]
-
         # create Slater determinant
         psi = fr.slater_determinant(orb)
         # must be normalized
