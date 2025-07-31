@@ -20,10 +20,10 @@ class TestCommutators(unittest.TestCase):
                     ai = alist[i]
                     aj = alist[j]
                     delta = (1 if i == j else 0)
-                    self.assertEqual(spla.norm(anti_comm(ci, aj)
+                    self.assertEqual(spla.norm(fr.anti_comm(ci, aj)
                                                - delta * sparse.identity(2**nmodes)), 0)
-                    self.assertEqual(spla.norm(anti_comm(ci, cj)), 0)
-                    self.assertEqual(spla.norm(anti_comm(ai, aj)), 0)
+                    self.assertEqual(spla.norm(fr.anti_comm(ci, cj)), 0)
+                    self.assertEqual(spla.norm(fr.anti_comm(ai, aj)), 0)
         # use a numerical "orbital"
         rng = np.random.default_rng()
         nmodes = 5
@@ -32,7 +32,7 @@ class TestCommutators(unittest.TestCase):
         c = fr.orbital_create_op(x)
         a = fr.orbital_annihil_op(x)
         self.assertAlmostEqual(spla.norm(
-            anti_comm(c, a) - sparse.identity(2**nmodes)), 0, delta=1e-14)
+            fr.anti_comm(c, a) - sparse.identity(2**nmodes)), 0, delta=1e-14)
 
     def test_comm_n_a(self):
         """
@@ -44,16 +44,16 @@ class TestCommutators(unittest.TestCase):
                 c = clist[i]
                 a = alist[i]
                 n = nlist[i]
-                self.assertEqual(spla.norm(comm(n, c) - c), 0)
-                self.assertEqual(spla.norm(comm(a, n) - a), 0)
+                self.assertEqual(spla.norm(fr.comm(n, c) - c), 0)
+                self.assertEqual(spla.norm(fr.comm(a, n) - a), 0)
         # use a numerical "orbital"
         rng = np.random.default_rng()
         x = fr.crandn(5, rng)
         x /= np.linalg.norm(x)
         a = fr.orbital_annihil_op(x)
         n = fr.orbital_number_op(x)
-        self.assertAlmostEqual(spla.norm(comm(n, a.conj().T) - a.conj().T), 0)
-        self.assertAlmostEqual(spla.norm(comm(a, n) - a), 0)
+        self.assertAlmostEqual(spla.norm(fr.comm(n, a.conj().T) - a.conj().T), 0)
+        self.assertAlmostEqual(spla.norm(fr.comm(a, n) - a), 0)
 
     def test_comm_n_hop(self):
         """
@@ -69,22 +69,8 @@ class TestCommutators(unittest.TestCase):
                     ai = alist[i]
                     aj = alist[j]
                     self.assertEqual(spla.norm(
-                        comm(ni, ai.T @ aj + aj.T @ ai)
-                          - (ai.T @ aj - aj.T @ ai)), 0)
-
-
-def anti_comm(a, b):
-    """
-    Anti-commutator {a, b} = a b + b a.
-    """
-    return a @ b + b @ a
-
-
-def comm(a, b):
-    """
-    Commutator [a, b] = a b - b a.
-    """
-    return a @ b - b @ a
+                        fr.comm(ni, ai.T @ aj + aj.T @ ai)
+                             - (ai.T @ aj - aj.T @ ai)), 0)
 
 
 if __name__ == "__main__":

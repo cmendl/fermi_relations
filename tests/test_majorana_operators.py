@@ -6,7 +6,7 @@ import scipy.sparse.linalg as spla
 import fermi_relations as fr
 
 
-class TestMajorana(unittest.TestCase):
+class TestMajoranaOperators(unittest.TestCase):
 
     def test_hermitian(self):
         """
@@ -28,7 +28,7 @@ class TestMajorana(unittest.TestCase):
             for i, mi in enumerate(mlist):
                 for j, mj in enumerate(mlist):
                     delta = (1 if i == j else 0)
-                    self.assertEqual(spla.norm(anti_comm(mi, mj)
+                    self.assertEqual(spla.norm(fr.anti_comm(mi, mj)
                                                - 2 * delta * sparse.identity(2**nmodes)), 0)
 
     def test_orthonormality(self):
@@ -68,6 +68,43 @@ class TestMajorana(unittest.TestCase):
             for i, n_ref in enumerate(nlist):
                 n_maj = 0.5 * (sparse.identity(2**nmodes) + 1j * mlist[2*i] @ mlist[2*i+1])
                 self.assertEqual(spla.norm(n_maj - n_ref), 0)
+
+    def test_kinetic_exponential(self):
+        """
+        Test the matrix exponential representation of the kinetic hopping term
+        based on Majorana operators.
+        """
+        t = 1.3
+        for nmodes in range(2, 8):
+            clist, alist, _ = fr.construct_fermionic_operators(nmodes)
+            mlist = fr.construct_majorana_operators(nmodes)
+            for i in range(nmodes):
+                for j in range(nmodes):
+                    if i == j:
+                        continue
+                    tkin = clist[i] @ alist[j] + clist[j] @ alist[i]
+                    ufull_ref = expm(-1j * t * tkin.toarray())
+                    ufull_maj = expm(0.5 * t * (mlist[2*i] @ mlist[2*j+1]
+                                              + mlist[2*j] @ mlist[2*i+1]).toarray())
+                    ufull_maj_alt = fr.kinetic_exponential_majorana(nmodes, i, j, t)
+                    self.assertTrue(np.allclose(ufull_maj, ufull_ref))
+                    self.assertTrue(np.allclose(ufull_maj_alt.toarray(), ufull_ref))
+
+    def test_interaction_exponential(self):
+        """
+        Test properties of the matrix exponential of the interaction term
+        based on Majorana operators.
+        """
+        t = 0.3
+        for nmodes in range(1, 8):
+            _, _, nlist = fr.construct_fermionic_operators(nmodes)
+            for i in range(nmodes):
+                for j in range(nmodes):
+                    vint = ((nlist[i].toarray() - 0.5*np.identity(2**nmodes))
+                          @ (nlist[j].toarray() - 0.5*np.identity(2**nmodes)))
+                    ufull_ref = expm(-1j * t * vint)
+                    ufull = fr.interaction_exponential_majorana(nmodes, i, j, t)
+                    self.assertTrue(np.allclose(ufull.toarray(), ufull_ref))
 
     def test_free_fermion_hamiltonian(self):
         """
@@ -145,20 +182,6 @@ class TestMajorana(unittest.TestCase):
             hdiag = -2j * sum(lambda_list[i] * (mlist[2*i] @ mlist[2*i+1]) for i in range(nmodes))
             self.assertTrue(np.allclose(wfull.conj().T @ hfull @ wfull,
                                         hdiag.toarray()))
-
-
-def anti_comm(a, b):
-    """
-    Anti-commutator {a, b} = a b + b a.
-    """
-    return a @ b + b @ a
-
-
-def comm(a, b):
-    """
-    Commutator [a, b] = a b - b a.
-    """
-    return a @ b - b @ a
 
 
 if __name__ == "__main__":

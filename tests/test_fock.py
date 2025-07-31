@@ -44,42 +44,6 @@ class TestFock(unittest.TestCase):
             self.assertAlmostEqual(np.linalg.norm(
                 n @ psi - (1 if i < nptcl else 0) * psi), 0, delta=1e-13)
 
-    def test_free_fermion_hamiltonian(self):
-        """
-        Test relations of a free-fermion Hamiltonian.
-        """
-        rng = np.random.default_rng()
-
-        # number of modes
-        nmodes = 7
-
-        # random single-particle Hamiltonian
-        h = fr.crandn((nmodes, nmodes), rng)
-        h = 0.5*(h + h.conj().T)
-        # Hamiltonian on full Fock space
-        clist, alist, _ = fr.construct_fermionic_operators(nmodes)
-        hfull = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
-
-        # number of particles
-        nptcl = 3
-        # random orthonormal states
-        base = unitary_group.rvs(nmodes, random_state=rng)
-        orb = base[:, :nptcl]
-        # create Slater determinant
-        psi = fr.slater_determinant(orb)
-
-        # energy expectation value
-        en = np.vdot(psi, hfull.toarray() @ psi)
-        self.assertAlmostEqual(en, np.trace(orb.conj().T @ h @ orb))
-
-        # time-evolved state
-        psi_t = expm(-1j*hfull.toarray()) @ psi
-        # alternative construction: time-evolve single-particle states individually
-        orb_t = expm(-1j*h) @ orb
-        psi_t_alt = fr.slater_determinant(orb_t)
-        # compare
-        self.assertTrue(np.allclose(psi_t_alt, psi_t))
-
     def test_orbital_base_change(self):
         """
         Test matrix representation of single-particle base change
@@ -112,31 +76,6 @@ class TestFock(unittest.TestCase):
         psi = np.reshape(ufull[:, i].toarray(), -1)
         # compare
         self.assertTrue(np.allclose(psi, psi_ref))
-
-    def test_thouless_theorem(self):
-        """
-        Numerically verify Thouless' theorem.
-        """
-        rng = np.random.default_rng()
-
-        # number of modes
-        nmodes = 5
-
-        # random single-particle base change matrix as matrix exponential
-        h = fr.crandn((nmodes, nmodes), rng)
-        # identity even holds if 'h' is not Hermitian (and 'U' not unitary)
-        # h = 0.5*(h + h.conj().T)
-        u = expm(-1j*h)
-
-        clist, alist, _ = fr.construct_fermionic_operators(nmodes)
-        tfull = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
-        ufull = expm(-1j*tfull.toarray())
-
-        # reference base change matrix on full Fock space
-        ufull_ref = fr.fock_orbital_base_change(u)
-
-        # compare
-        self.assertTrue(np.allclose(ufull, ufull_ref.toarray()))
 
     def test_skew_number_op(self):
         """

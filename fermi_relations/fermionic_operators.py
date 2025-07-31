@@ -10,19 +10,19 @@ def construct_fermionic_operators(nmodes: int):
     annihilation operators for `nmodes` modes (or sites),
     based on Jordan-Wigner transformation.
     """
-    I = sparse.identity(2)
-    Z = sparse.csr_matrix([[ 1.,  0.], [ 0., -1.]])
-    U = sparse.csr_matrix([[ 0.,  0.], [ 1.,  0.]])
+    id2 = sparse.identity(2)
+    z = sparse.csr_matrix([[ 1.,  0.], [ 0., -1.]])
+    u = sparse.csr_matrix([[ 0.,  0.], [ 1.,  0.]])
     clist = []
     for i in range(nmodes):
         c = sparse.identity(1)
         for j in range(nmodes):
             if j < i:
-                c = sparse.kron(c, I)
+                c = sparse.kron(c, id2)
             elif j == i:
-                c = sparse.kron(c, U)
+                c = sparse.kron(c, u)
             else:
-                c = sparse.kron(c, Z)
+                c = sparse.kron(c, z)
         c = sparse.csr_matrix(c)
         c.eliminate_zeros()
         clist.append(c)
@@ -70,3 +70,25 @@ def total_number_op(nmodes: int):
     data = np.array([n.bit_count() for n in range(2**nmodes)], dtype=float)
     ind = np.arange(2**nmodes)
     return sparse.csr_matrix((data, (ind, ind)), shape=(2**nmodes, 2**nmodes))
+
+
+def kinetic_exponential(nmodes: int, i: int, j: int, t: float):
+    """
+    Construct the unitary matrix exponential of the kinetic hopping term.
+    """
+    clist, alist, nlist = construct_fermionic_operators(nmodes)
+    numop_proj = (nlist[i] @ (sparse.identity(2**nmodes) - nlist[j])
+                + nlist[j] @ (sparse.identity(2**nmodes) - nlist[i]))
+    tkin = clist[i] @ alist[j] + clist[j] @ alist[i]
+    # Euler representation
+    return sparse.identity(2**nmodes) + (np.cos(t) - 1) * numop_proj - 1j * np.sin(t) * tkin
+
+
+def interaction_exponential(nmodes: int, i: int, j: int, t: float):
+    """
+    Construct the unitary matrix exponential of the interaction term (n_i - 1/2) (n_j - 1/2).
+    """
+    _, _, nlist = construct_fermionic_operators(nmodes)
+    vint = (nlist[i] - 0.5*sparse.identity(2**nmodes)) @ (nlist[j] - 0.5*sparse.identity(2**nmodes))
+    # Euler representation
+    return np.cos(0.25*t) * sparse.identity(2**nmodes) - 4j * np.sin(0.25*t) * vint
