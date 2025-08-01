@@ -1,4 +1,4 @@
-.. image:: https://github.com/cmendl/fermi_relations/actions/workflows/ci.yml/badge.svg?branch=master
+.. image:: https://github.com/cmendl/fermi_relations/actions/workflows/ci.yml/badge.svg?branch=main
   :target: https://github.com/cmendl/fermi_relations/actions/workflows/ci.yml
 
 
