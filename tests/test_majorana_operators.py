@@ -121,8 +121,7 @@ class TestMajoranaOperators(unittest.TestCase):
         # number of modes
         for nmodes in range(1, 8):
             # random real anti-symmetric single-particle Hamiltonian
-            h = rng.standard_normal((2*nmodes, 2*nmodes))
-            h = 0.5*(h - h.conj().T)
+            h = antisymmetrize(rng.standard_normal((2*nmodes, 2*nmodes)))
             # Hamiltonian on full Fock space, Eq. (11)
             mlist = fr.construct_majorana_operators(nmodes)
             hfull = 1j * sum(h[i, j] * (mlist[i] @ mlist[j])
@@ -182,6 +181,88 @@ class TestMajoranaOperators(unittest.TestCase):
             hdiag = -2j * sum(lambda_list[i] * (mlist[2*i] @ mlist[2*i+1]) for i in range(nmodes))
             self.assertTrue(np.allclose(wfull.conj().T @ hfull @ wfull,
                                         hdiag.toarray()))
+
+    def test_base_change(self):
+        """
+        Test relations of single-mode base changes.
+        """
+        rng = np.random.default_rng()
+
+        # number of bases
+        nbases = 3
+
+        # number of modes
+        for nmodes in range(1, 8):
+
+            mlist = fr.construct_majorana_operators(nmodes)
+
+            # random real anti-symmetric single-particle Hamiltonian
+            hlist = [antisymmetrize(rng.standard_normal((2*nmodes, 2*nmodes)))
+                     for _ in range(nbases)]
+            # Hamiltonian on full Fock space
+            hfull_list = [1j * sum(h[i, j] * (mlist[i] @ mlist[j])
+                                   for i in range(2*nmodes)
+                                   for j in range(2*nmodes)) for h in hlist]
+            # must be Hermitian
+            for hfull in hfull_list:
+                self.assertAlmostEqual(spla.norm(hfull.conj().T - hfull), 0., delta=1e-14)
+
+            # single-mode base change
+            u = np.identity(2*nmodes)
+            for h in hlist:
+                u = u @ expm(4*h)
+            # must be orthogonal
+            self.assertTrue(np.isrealobj(u))
+            self.assertTrue(np.allclose(u.T @ u, np.identity(2*nmodes)))
+            # base change on full Fock space
+            ufull = np.identity(2**nmodes)
+            for hfull in hfull_list:
+                ufull = ufull @ expm(-1j*hfull.toarray())
+            # must be unitary
+            self.assertTrue(np.allclose(ufull.conj().T @ ufull, np.identity(ufull.shape[1])))
+
+            # Majorana mode transformation
+            mlist_new = [sum(u[i, j] * mlist[j].toarray() for j in range(len(mlist)))
+                         for i in range(len(mlist))]
+            for i, m in enumerate(mlist):
+                self.assertTrue(np.allclose(ufull.conj().T @ m @ ufull, mlist_new[i]))
+
+            # basis transformation applied to a string of Majorana operators
+            idx = rng.choice(2*nmodes, size=5)
+            mstring = np.identity(2**nmodes)
+            for i in idx:
+                mstring = mstring @ mlist[i]
+            mstring_new = np.identity(2**nmodes)
+            for i in idx:
+                mstring_new = mstring_new @ mlist_new[i]
+            self.assertTrue(
+                np.allclose(ufull.conj().T @ mstring @ ufull, mstring_new))
+
+            # basis transformation applied to a matrix exponential of Majorana operators
+            vint = 0.1 * fr.crandn(3 * (2*nmodes,), rng)
+            op = expm(sum(vint[i, j, k] * (mlist[i] @ mlist[j] @ mlist[k]).toarray()
+                          for i in range(len(mlist))
+                          for j in range(len(mlist))
+                          for k in range(len(mlist))))
+            op_new = expm(sum(vint[i, j, k] * (mlist_new[i] @ mlist_new[j] @ mlist_new[k])
+                              for i in range(len(mlist_new))
+                              for j in range(len(mlist_new))
+                              for k in range(len(mlist_new))))
+            self.assertTrue(np.allclose(ufull.conj().T @ op @ ufull, op_new))
+            # alternative calculation
+            vint_new = np.einsum(u, (3, 0), u, (4, 1), u, (5, 2), vint, (3, 4, 5), (0, 1, 2))
+            op_new_alt = expm(sum(vint_new[i, j, k] * (mlist[i] @ mlist[j] @ mlist[k]).toarray()
+                                  for i in range(len(mlist))
+                                  for j in range(len(mlist))
+                                  for k in range(len(mlist))))
+            self.assertTrue(np.allclose(ufull.conj().T @ op @ ufull, op_new_alt))
+
+
+def antisymmetrize(a):
+    """
+    Anti-symmetrize a matrix.
+    """
+    return 0.5*(a - a.conj().T)
 
 
 if __name__ == "__main__":
