@@ -106,6 +106,32 @@ class TestMajoranaOperators(unittest.TestCase):
                     ufull = fr.interaction_exponential_majorana(nmodes, i, j, t)
                     self.assertTrue(np.allclose(ufull.toarray(), ufull_ref))
 
+    def test_interaction_exponential_conjugation(self):
+        """
+        Test the equation describing the conjugation by the matrix exponential
+        of the interaction term based on Majorana operators.
+        """
+        t = 0.7
+        for nmodes in range(1, 8):
+            mlist = fr.construct_majorana_operators(nmodes)
+            for i in range(nmodes):
+                for j in range(nmodes):
+                    # ensure that i != j
+                    if i == j:
+                        continue
+                    ufull = fr.interaction_exponential_majorana(nmodes, i, j, t)
+                    for k, m in enumerate(mlist):
+                        mconj_ref = ufull.conj().T @ m @ ufull
+                        idx = [2*i, 2*i+1, 2*j, 2*j+1]
+                        if k not in idx:
+                            mconj = m
+                        else:
+                            idx.remove(k)
+                            mconj = (np.cos(0.5*t) * m
+                                     + 1j * np.sin(0.5*t) * (-1)**k
+                                     * (mlist[idx[0]] @ mlist[idx[1]] @ mlist[idx[2]]))
+                        self.assertAlmostEqual(spla.norm(mconj - mconj_ref), 0, delta=1e-14)
+
     def test_free_fermion_hamiltonian(self):
         """
         Test relations of a free-fermion Hamiltonian in the Majorana representation.
@@ -196,10 +222,10 @@ class TestMajoranaOperators(unittest.TestCase):
 
             mlist = fr.construct_majorana_operators(nmodes)
 
-            # random real anti-symmetric single-particle Hamiltonian
+            # random real anti-symmetric single-particle Hamiltonians
             hlist = [antisymmetrize(rng.standard_normal((2*nmodes, 2*nmodes)))
                      for _ in range(nbases)]
-            # Hamiltonian on full Fock space
+            # Hamiltonians on full Fock space
             hfull_list = [1j * sum(h[i, j] * (mlist[i] @ mlist[j])
                                    for i in range(2*nmodes)
                                    for j in range(2*nmodes)) for h in hlist]
