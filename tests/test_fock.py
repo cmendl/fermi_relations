@@ -1,6 +1,5 @@
 import unittest
 import numpy as np
-from scipy.linalg import expm
 from scipy.stats import unitary_group
 import scipy.sparse.linalg as spla
 from scipy import sparse
