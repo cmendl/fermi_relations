@@ -26,9 +26,9 @@ def kinetic_exponential_majorana(nmodes: int, i: int, j: int, t: float):
     return sparse.identity(2**nmodes) + (np.cos(t) - 1) * numop_proj - np.sin(t) * itkin
 
 
-def interaction_exponential_majorana(nmodes: int, i: int, j: int, t: float):
+def hubbard_interaction_exponential_majorana(nmodes: int, i: int, j: int, t: float):
     """
-    Construct the unitary matrix exponential of the interaction term (n_i - 1/2) (n_j - 1/2)
+    Construct the unitary matrix exponential of the Hubbard model interaction term (n_i - 1/2) (n_j - 1/2)
     based on Majorana operators.
     """
     mlist = construct_majorana_operators(nmodes)

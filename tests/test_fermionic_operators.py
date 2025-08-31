@@ -84,9 +84,9 @@ class TestFermionicOperators(unittest.TestCase):
                     ufull = fr.kinetic_exponential(nmodes, i, j, t)
                     self.assertTrue(np.allclose(ufull.toarray(), ufull_ref))
 
-    def test_interaction_exponential(self):
+    def test_hubbard_interaction_exponential(self):
         """
-        Test properties of the matrix exponential of the interaction term.
+        Test properties of the matrix exponential of the Hubbard model interaction term.
         """
         t = 0.4
         for nmodes in range(1, 8):
@@ -96,7 +96,7 @@ class TestFermionicOperators(unittest.TestCase):
                     vint = ((nlist[i].toarray() - 0.5*np.identity(2**nmodes))
                           @ (nlist[j].toarray() - 0.5*np.identity(2**nmodes)))
                     ufull_ref = expm(-1j * t * vint)
-                    ufull = fr.interaction_exponential(nmodes, i, j, t)
+                    ufull = fr.hubbard_interaction_exponential(nmodes, i, j, t)
                     self.assertTrue(np.allclose(ufull.toarray(), ufull_ref))
 
 

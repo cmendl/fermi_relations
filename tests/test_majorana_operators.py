@@ -60,7 +60,8 @@ class TestMajoranaOperators(unittest.TestCase):
 
     def test_number_op(self):
         """
-        Express the fermionic number operator in terms of Majorana operators.
+        Express the fermionic number operator in terms of Majorana operators,
+        `n_j = 1/2 (I + i m_{2j} m_{2j+1})`.
         """
         for nmodes in range(1, 8):
             _, _, nlist = fr.construct_fermionic_operators(nmodes)
@@ -90,9 +91,9 @@ class TestMajoranaOperators(unittest.TestCase):
                     self.assertTrue(np.allclose(ufull_maj, ufull_ref))
                     self.assertTrue(np.allclose(ufull_maj_alt.toarray(), ufull_ref))
 
-    def test_interaction_exponential(self):
+    def test_hubbard_interaction_exponential(self):
         """
-        Test properties of the matrix exponential of the interaction term
+        Test properties of the matrix exponential of the Hubbard model interaction term
         based on Majorana operators.
         """
         t = 0.3
@@ -103,13 +104,13 @@ class TestMajoranaOperators(unittest.TestCase):
                     vint = ((nlist[i].toarray() - 0.5*np.identity(2**nmodes))
                           @ (nlist[j].toarray() - 0.5*np.identity(2**nmodes)))
                     ufull_ref = expm(-1j * t * vint)
-                    ufull = fr.interaction_exponential_majorana(nmodes, i, j, t)
+                    ufull = fr.hubbard_interaction_exponential_majorana(nmodes, i, j, t)
                     self.assertTrue(np.allclose(ufull.toarray(), ufull_ref))
 
-    def test_interaction_exponential_conjugation(self):
+    def test_hubbard_interaction_exponential_conjugation(self):
         """
         Test the equation describing the conjugation by the matrix exponential
-        of the interaction term based on Majorana operators.
+        of the Hubbard model interaction term based on Majorana operators.
         """
         t = 0.7
         for nmodes in range(1, 8):
@@ -119,7 +120,7 @@ class TestMajoranaOperators(unittest.TestCase):
                     # ensure that i != j
                     if i == j:
                         continue
-                    ufull = fr.interaction_exponential_majorana(nmodes, i, j, t)
+                    ufull = fr.hubbard_interaction_exponential_majorana(nmodes, i, j, t)
                     for k, m in enumerate(mlist):
                         mconj_ref = ufull.conj().T @ m @ ufull
                         idx = [2*i, 2*i+1, 2*j, 2*j+1]

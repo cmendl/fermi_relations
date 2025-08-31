@@ -43,7 +43,7 @@ class TestHubbardStratonovich(unittest.TestCase):
                     continue
 
                 # time-evolved state governed by the Hubbard interaction term, as reference
-                psi_t_ref = fr.interaction_exponential(nmodes, i, j, t) @ psi
+                psi_t_ref = fr.hubbard_interaction_exponential(nmodes, i, j, t) @ psi
 
                 # use Hubbard-Stratonovich transformation
                 # to represent time-evolved state as a sum of two Slater determinants

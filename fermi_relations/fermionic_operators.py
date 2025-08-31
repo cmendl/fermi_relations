@@ -84,11 +84,41 @@ def kinetic_exponential(nmodes: int, i: int, j: int, t: float):
     return sparse.identity(2**nmodes) + (np.cos(t) - 1) * numop_proj - 1j * np.sin(t) * tkin
 
 
-def interaction_exponential(nmodes: int, i: int, j: int, t: float):
+def hubbard_interaction_exponential(nmodes: int, i: int, j: int, t: float):
     """
-    Construct the unitary matrix exponential of the interaction term (n_i - 1/2) (n_j - 1/2).
+    Construct the unitary matrix exponential of the
+    Hubbard model interaction term (n_i - 1/2) (n_j - 1/2).
     """
     _, _, nlist = construct_fermionic_operators(nmodes)
     vint = (nlist[i] - 0.5*sparse.identity(2**nmodes)) @ (nlist[j] - 0.5*sparse.identity(2**nmodes))
     # Euler representation
     return np.cos(0.25*t) * sparse.identity(2**nmodes) - 4j * np.sin(0.25*t) * vint
+
+
+def molecular_interaction(vint, physics_convention: bool = True):
+    """
+    Construct the molecular interaction term as a sparse matrix.
+    """
+    vint = np.asarray(vint)
+    nmodes = vint.shape[0]
+    assert vint.shape == (nmodes, nmodes, nmodes, nmodes)
+    clist, alist, _ = construct_fermionic_operators(nmodes)
+    vop = 0
+    if physics_convention:
+        for i in range(nmodes):
+            for j in range(nmodes):
+                for k in range(nmodes):
+                    for l in range(nmodes):
+                        # note: not using += here to allow for implicit type casting
+                        vop = vop + 0.5 * vint[i, j, k, l] * (
+                            clist[i] @ clist[j] @ alist[l] @ alist[k])
+    else:
+        for i in range(nmodes):
+            for j in range(nmodes):
+                for k in range(nmodes):
+                    for l in range(nmodes):
+                        # note: not using += here to allow for implicit type casting
+                        vop = vop + 0.5 * vint[i, j, k, l] * (
+                            clist[i] @ alist[j] @ clist[k] @ alist[l])
+    vop.eliminate_zeros()
+    return vop
