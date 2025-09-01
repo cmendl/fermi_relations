@@ -109,16 +109,15 @@ def molecular_interaction(vint, physics_convention: bool = True):
             for j in range(nmodes):
                 for k in range(nmodes):
                     for l in range(nmodes):
-                        # note: not using += here to allow for implicit type casting
-                        vop = vop + 0.5 * vint[i, j, k, l] * (
+                        # note ordering of 'k' and 'l'
+                        vop += 0.5 * vint[i, j, k, l] * (
                             clist[i] @ clist[j] @ alist[l] @ alist[k])
     else:
         for i in range(nmodes):
             for j in range(nmodes):
                 for k in range(nmodes):
                     for l in range(nmodes):
-                        # note: not using += here to allow for implicit type casting
-                        vop = vop + 0.5 * vint[i, j, k, l] * (
+                        vop += 0.5 * vint[i, j, k, l] * (
                             clist[i] @ alist[j] @ clist[k] @ alist[l])
     vop.eliminate_zeros()
     return vop

@@ -43,6 +43,23 @@ class TestFock(unittest.TestCase):
             self.assertAlmostEqual(np.linalg.norm(
                 n @ psi - (1 if i < nptcl else 0) * psi), 0, delta=1e-13)
 
+    def test_orthonormalize_slater_determinant(self):
+
+        rng = np.random.default_rng()
+
+        # number of modes
+        nmodes = 7
+        # number of particles
+        nptcl = 4
+        # non-orthonormalized orbitals
+        orb = 0.5 * rng.standard_normal((nmodes, nptcl))
+        psi_ref = fr.slater_determinant(orb)
+        # orthonormalize
+        orb_orth, overlap = fr.orthonormalize_slater_determinant(orb)
+        psi = overlap * fr.slater_determinant(orb_orth)
+        # compare
+        self.assertTrue(np.allclose(psi, psi_ref))
+
     def test_orbital_base_change(self):
         """
         Test matrix representation of single-particle base change

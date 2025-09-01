@@ -17,6 +17,15 @@ def slater_determinant(phi):
     return psi
 
 
+def orthonormalize_slater_determinant(phi):
+    """
+    Orthonormalize the states defining a Slater determinant.
+    """
+    chi, _ = np.linalg.qr(phi, mode="reduced")
+    overlap = np.vdot(slater_determinant(phi), slater_determinant(chi))
+    return chi, overlap
+
+
 def fock_orbital_base_change(u):
     """
     Construct the matrix representation of a unitary, single-particle
