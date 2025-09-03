@@ -22,7 +22,7 @@ def orthonormalize_slater_determinant(phi):
     Orthonormalize the states defining a Slater determinant.
     """
     chi, _ = np.linalg.qr(phi, mode="reduced")
-    overlap = np.vdot(slater_determinant(phi), slater_determinant(chi))
+    overlap = np.linalg.det(phi.conj().T @ chi)
     return chi, overlap
 
 

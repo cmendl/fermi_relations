@@ -52,7 +52,7 @@ class TestFock(unittest.TestCase):
         # number of particles
         nptcl = 4
         # non-orthonormalized orbitals
-        orb = 0.5 * rng.standard_normal((nmodes, nptcl))
+        orb = 0.5 * fr.crandn((nmodes, nptcl), rng)
         psi_ref = fr.slater_determinant(orb)
         # orthonormalize
         orb_orth, overlap = fr.orthonormalize_slater_determinant(orb)
