@@ -12,7 +12,7 @@ def slater_determinant(phi):
     # vacuum state
     psi = np.zeros(2**nmodes)
     psi[0] = 1
-    for i in range(phi.shape[1]):
+    for i in reversed(range(phi.shape[1])):
         psi = orbital_create_op(phi[:, i]) @ psi
     return psi
 
@@ -39,7 +39,7 @@ def fock_orbital_base_change(u):
         # vacuum state
         psi = np.zeros(2**nmodes)
         psi[0] = 1
-        for i in range(nmodes):
+        for i in reversed(range(nmodes)):
             if m & (1 << (nmodes - i - 1)):
                 psi = clist[i] @ psi
         u_fock[m] = psi
