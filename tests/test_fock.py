@@ -44,7 +44,9 @@ class TestFock(unittest.TestCase):
                 n @ psi - (1 if i < nptcl else 0) * psi), 0, delta=1e-13)
 
     def test_orthonormalize_slater_determinant(self):
-
+        """
+        Test Slater determinant orthonormalization.
+        """
         rng = np.random.default_rng()
 
         # number of modes
@@ -60,9 +62,33 @@ class TestFock(unittest.TestCase):
         # compare
         self.assertTrue(np.allclose(psi, psi_ref))
 
+    def test_givens_rotation(self):
+        """
+        Test matrix representation of a single-particle base change
+        described by a Givens rotation.
+        """
+        rng = np.random.default_rng()
+
+        # generalized Givens rotation
+        gmat = unitary_group.rvs(2, random_state=rng)
+        self.assertTrue(np.allclose(gmat.conj().T @ gmat, np.identity(2)))
+
+        # corresponding base change matrix on two-mode Fock space
+        gfull = fr.fock_orbital_base_change(gmat).todense()
+
+        # reference matrix
+        gfull_ref = np.array([
+            [1,   0,          0,          0                  ],
+            [0,   gmat[1, 1], gmat[1, 0], 0                  ],
+            [0,   gmat[0, 1], gmat[0, 0], 0                  ],
+            [0,   0,          0,          np.linalg.det(gmat)]])
+
+        # compare
+        self.assertTrue(np.allclose(gfull, gfull_ref))
+
     def test_orbital_base_change(self):
         """
-        Test matrix representation of single-particle base change
+        Test matrix representation of a single-particle base change
         on overall Fock space.
         """
         rng = np.random.default_rng()
@@ -92,6 +118,20 @@ class TestFock(unittest.TestCase):
         psi = np.reshape(ufull[:, i].toarray(), -1)
         # compare
         self.assertTrue(np.allclose(psi, psi_ref))
+
+        # base change applied to creation and annihilation operators
+        clist, alist, _ = fr.construct_fermionic_operators(nmodes)
+        for i in range(nmodes):
+            self.assertAlmostEqual(spla.norm(
+                ufull @ clist[i] @ ufull.conj().T - fr.orbital_create_op(u[:, i])), 0, delta=1e-13)
+            self.assertAlmostEqual(spla.norm(
+                ufull @ alist[i] @ ufull.conj().T - fr.orbital_annihil_op(u[:, i])), 0, delta=1e-13)
+
+        # compose two base changes
+        v = unitary_group.rvs(nmodes, random_state=rng)
+        vfull = fr.fock_orbital_base_change(v)
+        self.assertAlmostEqual(spla.norm(ufull @ vfull
+                                         - fr.fock_orbital_base_change(u @ v)), 0, delta=1e-13)
 
     def test_skew_number_op(self):
         """
