@@ -43,6 +43,23 @@ class TestFock(unittest.TestCase):
             self.assertAlmostEqual(np.linalg.norm(
                 n @ psi - (1 if i < nptcl else 0) * psi), 0, delta=1e-13)
 
+    def test_vdot_slater(self):
+        """
+        Test inner product of two Slater determinants.
+        """
+        rng = np.random.default_rng()
+
+        # number of modes
+        nmodes = 8
+        # number of particles
+        nptcl = 5
+        # random orthonormal states
+        chi = unitary_group.rvs(nmodes, random_state=rng)[:, :nptcl]
+        phi = unitary_group.rvs(nmodes, random_state=rng)[:, :nptcl]
+        # compare with inner product of state vectors (as reference)
+        self.assertAlmostEqual(fr.vdot_slater(chi, phi),
+                               np.vdot(fr.slater_determinant(chi), fr.slater_determinant(phi)), delta=1e-13)
+
     def test_orthonormalize_slater_determinant(self):
         """
         Test Slater determinant orthonormalization.

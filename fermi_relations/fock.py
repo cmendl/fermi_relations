@@ -17,13 +17,20 @@ def slater_determinant(phi):
     return psi
 
 
+def vdot_slater(chi, phi):
+    """
+    Inner product `<chi | phi>` of two Slater determinants
+    specified by their single-particle states.
+    """
+    return np.linalg.det(chi.conj().T @ phi)
+
+
 def orthonormalize_slater_determinant(phi):
     """
     Orthonormalize the states defining a Slater determinant.
     """
     chi, _ = np.linalg.qr(phi, mode="reduced")
-    overlap = np.linalg.det(phi.conj().T @ chi)
-    return chi, overlap
+    return chi, vdot_slater(phi, chi)
 
 
 def fock_orbital_base_change(u):
