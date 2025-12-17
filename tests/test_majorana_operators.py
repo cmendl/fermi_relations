@@ -209,6 +209,16 @@ class TestMajoranaOperators(unittest.TestCase):
             self.assertTrue(np.allclose(wfull.conj().T @ hfull @ wfull,
                                         hdiag.toarray()))
 
+            # use diagonalization for matrix exponential
+            ufull_alt = np.identity(ufull.shape[0])
+            # transpose 'w' for inverse transformation
+            mlist_h = [sum(w[j, i] * mlist[j].toarray() for j in range(len(mlist))) for i in range(2*nmodes)]
+            for i in range(nmodes):
+                ufull_i = (np.cos(2*lambda_list[i]) * np.identity(ufull.shape[0])
+                         - np.sin(2*lambda_list[i]) * (mlist_h[2*i] @ mlist_h[2*i+1]))
+                ufull_alt = ufull_alt @ ufull_i
+            self.assertTrue(np.allclose(ufull, ufull_alt))
+
     def test_base_change(self):
         """
         Test relations of single-mode base changes.
