@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse import lil_matrix, csr_matrix
-from fermi_relations.fermionic_operators import orbital_create_op
+from fermi_relations.fermiops import orbital_create_op
 
 
 def slater_determinant(phi):

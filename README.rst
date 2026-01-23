@@ -7,6 +7,8 @@ Fermi relations
 
 Relations and equalities regarding the fermionic algebra.
 
+The relations are explored and numerically verified by the code in the `tests <tests/>`__ folder.
+
 
 Installation
 ------------

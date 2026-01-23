@@ -6,7 +6,7 @@ from scipy import sparse
 import fermi_relations as fr
 
 
-class TestFock(unittest.TestCase):
+class TestSlaterDeterminants(unittest.TestCase):
 
     def test_total_number_op(self):
         """
