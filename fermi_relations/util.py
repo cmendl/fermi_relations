@@ -23,3 +23,15 @@ def crandn(size=None, rng: np.random.Generator=None):
         rng = np.random.default_rng()
     # 1/sqrt(2) is a normalization factor
     return (rng.normal(size=size) + 1j*rng.normal(size=size)) / np.sqrt(2)
+
+
+def gauss_hermite_quadrature(n: int):
+    """
+    Compute the Gauss-Hermite quadrature points and weights.
+    """
+    # Golub-Welsch algorithm
+    entries = np.sqrt(np.arange(1, n))
+    points, vecs = np.linalg.eigh(np.diag(entries, 1) + np.diag(entries, -1))
+    # require that eigenvectors are normalized
+    weights = np.abs(vecs[0, :])**2
+    return points, weights

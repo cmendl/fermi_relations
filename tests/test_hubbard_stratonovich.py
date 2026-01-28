@@ -90,23 +90,11 @@ class TestHubbardStratonovich(unittest.TestCase):
 
         # continuous Hubbard-Stratonovich transformation
         phase = np.exp(-1j * np.pi / 4)
-        points, weights = gauss_hermite_quadrature(15)
+        points, weights = fr.gauss_hermite_quadrature(15)
         ufull = sum(w * expm(-phase * x * np.sqrt(t) * bfull) for x, w in zip(points, weights))
 
         # compare
         self.assertTrue(np.allclose(ufull, ufull_ref, rtol=1e-13))
-
-
-def gauss_hermite_quadrature(n: int):
-    """
-    Compute the Gauss-Hermite quadrature points and weights.
-    """
-    # Golub-Welsch algorithm
-    entries = np.sqrt(np.arange(1, n))
-    points, vecs = np.linalg.eigh(np.diag(entries, 1) + np.diag(entries, -1))
-    # require that eigenvectors are normalized
-    weights = np.abs(vecs[0, :])**2
-    return points, weights
 
 
 if __name__ == '__main__':
