@@ -148,7 +148,7 @@ class TestMajoranaOperators(unittest.TestCase):
         # number of modes
         for nmodes in range(1, 8):
             # random real anti-symmetric single-particle Hamiltonian
-            h = antisymmetrize(rng.standard_normal((2*nmodes, 2*nmodes)))
+            h = fr.antisymmetrize(rng.standard_normal((2*nmodes, 2*nmodes)))
             # Hamiltonian on full Fock space, Eq. (11)
             mlist = fr.construct_majorana_operators(nmodes)
             hfull = 1j * sum(h[i, j] * (mlist[i] @ mlist[j])
@@ -234,7 +234,7 @@ class TestMajoranaOperators(unittest.TestCase):
             mlist = fr.construct_majorana_operators(nmodes)
 
             # random real anti-symmetric single-particle Hamiltonians
-            hlist = [antisymmetrize(rng.standard_normal((2*nmodes, 2*nmodes)))
+            hlist = [fr.antisymmetrize(rng.standard_normal((2*nmodes, 2*nmodes)))
                      for _ in range(nbases)]
             # Hamiltonians on full Fock space
             hfull_list = [1j * sum(h[i, j] * (mlist[i] @ mlist[j])
@@ -293,13 +293,6 @@ class TestMajoranaOperators(unittest.TestCase):
                                   for j in range(len(mlist))
                                   for k in range(len(mlist))))
             self.assertTrue(np.allclose(ufull.conj().T @ op @ ufull, op_new_alt))
-
-
-def antisymmetrize(a):
-    """
-    Anti-symmetrize a matrix.
-    """
-    return 0.5*(a - a.conj().T)
 
 
 if __name__ == "__main__":

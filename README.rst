@@ -7,12 +7,12 @@ Fermi relations
 
 Relations and equalities regarding the fermionic algebra.
 
-The relations are explored and numerically verified by the code in the `tests <tests/>`__ folder.
+A good starting point is the `tutorials <tutorials/>`__. The relations are explored and numerically verified by the code in the `tests <tests/>`__ folder.
 
 
 Installation
 ------------
-To install the code as Python package, clone this repository and install it in development mode via
+To install the code as a Python package, clone this repository and install it in development mode via
 
 .. code-block:: python
 

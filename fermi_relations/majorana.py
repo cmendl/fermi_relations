@@ -13,6 +13,16 @@ def construct_majorana_operators(nmodes: int):
     return [m for mtuple in mlist for m in mtuple]
 
 
+def orbital_majorana_op(x):
+    """
+    "Orbital" Majorana operator (linear combination of Majorana operators with coefficients 'x').
+    """
+    x = np.asarray(x)
+    nmodes = len(x) // 2
+    mlist = construct_majorana_operators(nmodes)
+    return sum(x[i] * mlist[i] for i in range(2*nmodes))
+
+
 def kinetic_exponential_majorana(nmodes: int, i: int, j: int, t: float):
     """
     Construct the unitary matrix exponential of the kinetic hopping term

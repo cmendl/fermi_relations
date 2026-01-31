@@ -15,6 +15,13 @@ def comm(a, b):
     return a @ b - b @ a
 
 
+def antisymmetrize(a):
+    """
+    Anti-symmetrize a matrix.
+    """
+    return 0.5*(a - a.conj().T)
+
+
 def crandn(size=None, rng: np.random.Generator=None):
     """
     Draw random samples from the standard complex normal (Gaussian) distribution.
