@@ -36,7 +36,7 @@ class TestTensorProduct(unittest.TestCase):
 
         # random single-site operator
         a = fr.crandn((nmodes, nmodes), rng)
-        # tensor products on full Fock space
+        # tensor products on the whole Fock space
         a_tensor = fr.tensor_product(a)
 
         # random orthonormal states

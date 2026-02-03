@@ -75,26 +75,26 @@ class TestHubbardStratonovich(unittest.TestCase):
 
         # random single-particle operator (not Hermitian in general)
         b = 0.5 * fr.crandn((nmodes, nmodes), rng)
-        # free-fermion operator on full Fock space
-        bfull = sum(b[i, j] * (clist[i] @ alist[j])
+        # free-fermion operator on the whole Fock space
+        bfock = sum(b[i, j] * (clist[i] @ alist[j])
                     for i in range(nmodes)
                     for j in range(nmodes)).toarray()
 
         # squared operator
-        vfull = bfull @ bfull
+        vfock = bfock @ bfock
 
         t = 0.3
 
         # reference time evolution operator
-        ufull_ref = expm(-0.5j * t * vfull)
+        ufock_ref = expm(-0.5j * t * vfock)
 
         # continuous Hubbard-Stratonovich transformation
         phase = np.exp(-1j * np.pi / 4)
         points, weights = fr.gauss_hermite_quadrature(15)
-        ufull = sum(w * expm(-phase * x * np.sqrt(t) * bfull) for x, w in zip(points, weights))
+        ufock = sum(w * expm(-phase * x * np.sqrt(t) * bfock) for x, w in zip(points, weights))
 
         # compare
-        self.assertTrue(np.allclose(ufull, ufull_ref, rtol=1e-13))
+        self.assertTrue(np.allclose(ufock, ufock_ref, rtol=1e-13))
 
 
 if __name__ == '__main__':

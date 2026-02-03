@@ -91,17 +91,17 @@ class TestSlaterDeterminants(unittest.TestCase):
         self.assertTrue(np.allclose(gmat.conj().T @ gmat, np.identity(2)))
 
         # corresponding base change matrix on two-mode Fock space
-        gfull = fr.fock_orbital_base_change(gmat).todense()
+        gfock = fr.fock_orbital_base_change(gmat).todense()
 
         # reference matrix
-        gfull_ref = np.array([
+        gfock_ref = np.array([
             [1,   0,          0,          0                  ],
             [0,   gmat[1, 1], gmat[1, 0], 0                  ],
             [0,   gmat[0, 1], gmat[0, 0], 0                  ],
             [0,   0,          0,          np.linalg.det(gmat)]])
 
         # compare
-        self.assertTrue(np.allclose(gfull, gfull_ref))
+        self.assertTrue(np.allclose(gfock, gfock_ref))
 
     def test_orbital_base_change(self):
         """
@@ -115,24 +115,24 @@ class TestSlaterDeterminants(unittest.TestCase):
 
         # for a single-particle identity map, the overall base change matrix
         # should likewise be the identity map
-        ufull = fr.fock_orbital_base_change(np.identity(nmodes))
-        self.assertEqual(spla.norm(ufull - sparse.identity(2**nmodes)), 0)
+        ufock = fr.fock_orbital_base_change(np.identity(nmodes))
+        self.assertEqual(spla.norm(ufock - sparse.identity(2**nmodes)), 0)
 
         # random orthonormal states
         u = unitary_group.rvs(nmodes, random_state=rng)
         self.assertTrue(np.allclose(u.conj().T @ u, np.identity(nmodes)))
 
-        ufull = fr.fock_orbital_base_change(u)
+        ufock = fr.fock_orbital_base_change(u)
         # must likewise be unitary
         self.assertAlmostEqual(spla.norm(
-            ufull.conj().T @ ufull - sparse.identity(2**nmodes)), 0, delta=1e-13)
+            ufock.conj().T @ ufock - sparse.identity(2**nmodes)), 0, delta=1e-13)
 
         idx = [0, 2, 3]
         psi_ref = fr.slater_determinant(u[:, idx])
         # encode indices in binary format
         i = sum(1 << (nmodes - j - 1) for j in idx)
         # need to reshape since slicing returns matrix (different from numpy convention)
-        psi = np.reshape(ufull[:, i].toarray(), -1)
+        psi = np.reshape(ufock[:, i].toarray(), -1)
         # compare
         self.assertTrue(np.allclose(psi, psi_ref))
 
@@ -140,14 +140,14 @@ class TestSlaterDeterminants(unittest.TestCase):
         clist, alist, _ = fr.construct_fermionic_operators(nmodes)
         for i in range(nmodes):
             self.assertAlmostEqual(spla.norm(
-                ufull @ clist[i] @ ufull.conj().T - fr.orbital_create_op(u[:, i])), 0, delta=1e-13)
+                ufock @ clist[i] @ ufock.conj().T - fr.orbital_create_op(u[:, i])), 0, delta=1e-13)
             self.assertAlmostEqual(spla.norm(
-                ufull @ alist[i] @ ufull.conj().T - fr.orbital_annihil_op(u[:, i])), 0, delta=1e-13)
+                ufock @ alist[i] @ ufock.conj().T - fr.orbital_annihil_op(u[:, i])), 0, delta=1e-13)
 
         # compose two base changes
         v = unitary_group.rvs(nmodes, random_state=rng)
-        vfull = fr.fock_orbital_base_change(v)
-        self.assertAlmostEqual(spla.norm(ufull @ vfull
+        vfock = fr.fock_orbital_base_change(v)
+        self.assertAlmostEqual(spla.norm(ufock @ vfock
                                          - fr.fock_orbital_base_change(u @ v)), 0, delta=1e-13)
 
     def test_skew_number_op(self):

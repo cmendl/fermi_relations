@@ -19,9 +19,9 @@ class TestFermionicOperators(unittest.TestCase):
         # random single-particle Hamiltonian
         h = fr.crandn((nmodes, nmodes), rng)
         h = 0.5*(h + h.conj().T)
-        # Hamiltonian on full Fock space
+        # Hamiltonian on the whole Fock space
         clist, alist, _ = fr.construct_fermionic_operators(nmodes)
-        hfull = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
+        hfock = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
 
         # number of particles
         nptcl = 3
@@ -32,11 +32,11 @@ class TestFermionicOperators(unittest.TestCase):
         psi = fr.slater_determinant(orb)
 
         # energy expectation value
-        en = np.vdot(psi, hfull.toarray() @ psi)
+        en = np.vdot(psi, hfock.toarray() @ psi)
         self.assertAlmostEqual(en, np.trace(orb.conj().T @ h @ orb))
 
         # time-evolved state
-        psi_t = expm(-1j*hfull.toarray()) @ psi
+        psi_t = expm(-1j*hfock.toarray()) @ psi
         # alternative construction: time-evolve single-particle states individually
         orb_t = expm(-1j*h) @ orb
         psi_t_alt = fr.slater_determinant(orb_t)
@@ -59,14 +59,14 @@ class TestFermionicOperators(unittest.TestCase):
         u = expm(-1j*h)
 
         clist, alist, _ = fr.construct_fermionic_operators(nmodes)
-        tfull = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
-        ufull = expm(-1j*tfull.toarray())
+        tfock = sum(h[i, j] * (clist[i] @ alist[j]) for i in range(nmodes) for j in range(nmodes))
+        ufock = expm(-1j*tfock.toarray())
 
-        # reference base change matrix on full Fock space
-        ufull_ref = fr.fock_orbital_base_change(u)
+        # reference base change matrix on the whole Fock space
+        ufock_ref = fr.fock_orbital_base_change(u)
 
         # compare
-        self.assertTrue(np.allclose(ufull, ufull_ref.toarray()))
+        self.assertTrue(np.allclose(ufock, ufock_ref.toarray()))
 
     def test_kinetic_exponential(self):
         """
@@ -80,9 +80,9 @@ class TestFermionicOperators(unittest.TestCase):
                     if i == j:
                         continue
                     tkin = clist[i] @ alist[j] + clist[j] @ alist[i]
-                    ufull_ref = expm(-1j * t * tkin.toarray())
-                    ufull = fr.kinetic_exponential(nmodes, i, j, t)
-                    self.assertTrue(np.allclose(ufull.toarray(), ufull_ref))
+                    ufock_ref = expm(-1j * t * tkin.toarray())
+                    ufock = fr.kinetic_exponential(nmodes, i, j, t)
+                    self.assertTrue(np.allclose(ufock.toarray(), ufock_ref))
 
     def test_hubbard_interaction_exponential(self):
         """
@@ -95,9 +95,9 @@ class TestFermionicOperators(unittest.TestCase):
                 for j in range(nmodes):
                     vint = ((nlist[i].toarray() - 0.5*np.identity(2**nmodes))
                           @ (nlist[j].toarray() - 0.5*np.identity(2**nmodes)))
-                    ufull_ref = expm(-1j * t * vint)
-                    ufull = fr.hubbard_interaction_exponential(nmodes, i, j, t)
-                    self.assertTrue(np.allclose(ufull.toarray(), ufull_ref))
+                    ufock_ref = expm(-1j * t * vint)
+                    ufock = fr.hubbard_interaction_exponential(nmodes, i, j, t)
+                    self.assertTrue(np.allclose(ufock.toarray(), ufock_ref))
 
 
 if __name__ == '__main__':

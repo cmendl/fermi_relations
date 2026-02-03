@@ -65,7 +65,7 @@ def orbital_number_op(x):
 
 def total_number_op(nmodes: int):
     """
-    Total number operator on full Fock space.
+    Total number operator on the whole Fock space.
     """
     data = np.array([n.bit_count() for n in range(2**nmodes)], dtype=float)
     ind = np.arange(2**nmodes)

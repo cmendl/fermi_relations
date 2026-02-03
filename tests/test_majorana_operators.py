@@ -84,12 +84,12 @@ class TestMajoranaOperators(unittest.TestCase):
                     if i == j:
                         continue
                     tkin = clist[i] @ alist[j] + clist[j] @ alist[i]
-                    ufull_ref = expm(-1j * t * tkin.toarray())
-                    ufull_maj = expm(0.5 * t * (mlist[2*i] @ mlist[2*j+1]
+                    ufock_ref = expm(-1j * t * tkin.toarray())
+                    ufock_maj = expm(0.5 * t * (mlist[2*i] @ mlist[2*j+1]
                                               + mlist[2*j] @ mlist[2*i+1]).toarray())
-                    ufull_maj_alt = fr.kinetic_exponential_majorana(nmodes, i, j, t)
-                    self.assertTrue(np.allclose(ufull_maj, ufull_ref))
-                    self.assertTrue(np.allclose(ufull_maj_alt.toarray(), ufull_ref))
+                    ufock_maj_alt = fr.kinetic_exponential_majorana(nmodes, i, j, t)
+                    self.assertTrue(np.allclose(ufock_maj, ufock_ref))
+                    self.assertTrue(np.allclose(ufock_maj_alt.toarray(), ufock_ref))
 
     def test_hubbard_interaction_exponential(self):
         """
@@ -103,9 +103,9 @@ class TestMajoranaOperators(unittest.TestCase):
                 for j in range(nmodes):
                     vint = ((nlist[i].toarray() - 0.5*np.identity(2**nmodes))
                           @ (nlist[j].toarray() - 0.5*np.identity(2**nmodes)))
-                    ufull_ref = expm(-1j * t * vint)
-                    ufull = fr.hubbard_interaction_exponential_majorana(nmodes, i, j, t)
-                    self.assertTrue(np.allclose(ufull.toarray(), ufull_ref))
+                    ufock_ref = expm(-1j * t * vint)
+                    ufock = fr.hubbard_interaction_exponential_majorana(nmodes, i, j, t)
+                    self.assertTrue(np.allclose(ufock.toarray(), ufock_ref))
 
     def test_hubbard_interaction_exponential_conjugation(self):
         """
@@ -120,9 +120,9 @@ class TestMajoranaOperators(unittest.TestCase):
                     # ensure that i != j
                     if i == j:
                         continue
-                    ufull = fr.hubbard_interaction_exponential_majorana(nmodes, i, j, t)
+                    ufock = fr.hubbard_interaction_exponential_majorana(nmodes, i, j, t)
                     for k, m in enumerate(mlist):
-                        mconj_ref = ufull.conj().T @ m @ ufull
+                        mconj_ref = ufock.conj().T @ m @ ufock
                         idx = [2*i, 2*i+1, 2*j, 2*j+1]
                         if k not in idx:
                             mconj = m
@@ -149,23 +149,23 @@ class TestMajoranaOperators(unittest.TestCase):
         for nmodes in range(1, 8):
             # random real anti-symmetric single-particle Hamiltonian
             h = fr.antisymmetrize(rng.standard_normal((2*nmodes, 2*nmodes)))
-            # Hamiltonian on full Fock space, Eq. (11)
+            # Hamiltonian on the whole Fock space, Eq. (11)
             mlist = fr.construct_majorana_operators(nmodes)
-            hfull = 1j * sum(h[i, j] * (mlist[i] @ mlist[j])
+            hfock = 1j * sum(h[i, j] * (mlist[i] @ mlist[j])
                              for i in range(2*nmodes)
                              for j in range(2*nmodes))
             # must be Hermitian
-            self.assertAlmostEqual(spla.norm(hfull.conj().T - hfull), 0., delta=1e-14)
+            self.assertAlmostEqual(spla.norm(hfock.conj().T - hfock), 0., delta=1e-14)
 
             u = expm(4*h)
-            ufull = expm(-1j*hfull.toarray())
+            ufock = expm(-1j*hfock.toarray())
             # must be unitary
-            self.assertTrue(np.allclose(ufull.conj().T @ ufull, np.identity(ufull.shape[1])))
+            self.assertTrue(np.allclose(ufock.conj().T @ ufock, np.identity(ufock.shape[1])))
 
             # Majorana mode transformation, Eq. (12)
             for i, m in enumerate(mlist):
                 self.assertTrue(
-                    np.allclose(ufull.conj().T @ m @ ufull,
+                    np.allclose(ufock.conj().T @ m @ ufock,
                                 sum(u[i, j] * mlist[j].toarray() for j in range(len(mlist)))))
 
             # block-diagonalize 'h', Eq. (14)
@@ -195,29 +195,29 @@ class TestMajoranaOperators(unittest.TestCase):
             self.assertTrue(np.allclose(g.T, -g))
             self.assertTrue(np.allclose(w, expm(4*g)))
 
-            gfull = 1j * sum(g[i, j] * (mlist[i] @ mlist[j])
+            gfock = 1j * sum(g[i, j] * (mlist[i] @ mlist[j])
                              for i in range(2*nmodes)
                              for j in range(2*nmodes))
             # must be Hermitian
-            self.assertAlmostEqual(spla.norm(gfull.conj().T - gfull), 0., delta=1e-13)
-            wfull = expm(-1j*gfull.toarray())
+            self.assertAlmostEqual(spla.norm(gfock.conj().T - gfock), 0., delta=1e-13)
+            wfock = expm(-1j*gfock.toarray())
             # must be unitary
-            self.assertTrue(np.allclose(wfull.conj().T @ wfull, np.identity(wfull.shape[1])))
+            self.assertTrue(np.allclose(wfock.conj().T @ wfock, np.identity(wfock.shape[1])))
 
             # Eq. (17)
             hdiag = -2j * sum(lambda_list[i] * (mlist[2*i] @ mlist[2*i+1]) for i in range(nmodes))
-            self.assertTrue(np.allclose(wfull.conj().T @ hfull @ wfull,
+            self.assertTrue(np.allclose(wfock.conj().T @ hfock @ wfock,
                                         hdiag.toarray()))
 
             # use diagonalization for matrix exponential
-            ufull_alt = np.identity(ufull.shape[0])
+            ufock_alt = np.identity(ufock.shape[0])
             # transpose 'w' for inverse transformation
             mlist_h = [sum(w[j, i] * mlist[j].toarray() for j in range(len(mlist))) for i in range(2*nmodes)]
             for i in range(nmodes):
-                ufull_i = (np.cos(2*lambda_list[i]) * np.identity(ufull.shape[0])
+                ufock_i = (np.cos(2*lambda_list[i]) * np.identity(ufock.shape[0])
                          - np.sin(2*lambda_list[i]) * (mlist_h[2*i] @ mlist_h[2*i+1]))
-                ufull_alt = ufull_alt @ ufull_i
-            self.assertTrue(np.allclose(ufull, ufull_alt))
+                ufock_alt = ufock_alt @ ufock_i
+            self.assertTrue(np.allclose(ufock, ufock_alt))
 
     def test_base_change(self):
         """
@@ -236,13 +236,13 @@ class TestMajoranaOperators(unittest.TestCase):
             # random real anti-symmetric single-particle Hamiltonians
             hlist = [fr.antisymmetrize(rng.standard_normal((2*nmodes, 2*nmodes)))
                      for _ in range(nbases)]
-            # Hamiltonians on full Fock space
-            hfull_list = [1j * sum(h[i, j] * (mlist[i] @ mlist[j])
+            # Hamiltonians on the whole Fock space
+            hfock_list = [1j * sum(h[i, j] * (mlist[i] @ mlist[j])
                                    for i in range(2*nmodes)
                                    for j in range(2*nmodes)) for h in hlist]
             # must be Hermitian
-            for hfull in hfull_list:
-                self.assertAlmostEqual(spla.norm(hfull.conj().T - hfull), 0., delta=1e-14)
+            for hfock in hfock_list:
+                self.assertAlmostEqual(spla.norm(hfock.conj().T - hfock), 0., delta=1e-14)
 
             # single-mode base change
             u = np.identity(2*nmodes)
@@ -251,18 +251,18 @@ class TestMajoranaOperators(unittest.TestCase):
             # must be orthogonal
             self.assertTrue(np.isrealobj(u))
             self.assertTrue(np.allclose(u.T @ u, np.identity(2*nmodes)))
-            # base change on full Fock space
-            ufull = np.identity(2**nmodes)
-            for hfull in hfull_list:
-                ufull = ufull @ expm(-1j*hfull.toarray())
+            # base change on the whole Fock space
+            ufock = np.identity(2**nmodes)
+            for hfock in hfock_list:
+                ufock = ufock @ expm(-1j*hfock.toarray())
             # must be unitary
-            self.assertTrue(np.allclose(ufull.conj().T @ ufull, np.identity(ufull.shape[1])))
+            self.assertTrue(np.allclose(ufock.conj().T @ ufock, np.identity(ufock.shape[1])))
 
             # Majorana mode transformation
             mlist_new = [sum(u[i, j] * mlist[j].toarray() for j in range(len(mlist)))
                          for i in range(len(mlist))]
             for i, m in enumerate(mlist):
-                self.assertTrue(np.allclose(ufull.conj().T @ m @ ufull, mlist_new[i]))
+                self.assertTrue(np.allclose(ufock.conj().T @ m @ ufock, mlist_new[i]))
 
             # basis transformation applied to a string of Majorana operators
             idx = rng.choice(2*nmodes, size=5)
@@ -273,7 +273,7 @@ class TestMajoranaOperators(unittest.TestCase):
             for i in idx:
                 mstring_new = mstring_new @ mlist_new[i]
             self.assertTrue(
-                np.allclose(ufull.conj().T @ mstring @ ufull, mstring_new))
+                np.allclose(ufock.conj().T @ mstring @ ufock, mstring_new))
 
             # basis transformation applied to a matrix exponential of Majorana operators
             vint = 0.1 * fr.crandn(3 * (2*nmodes,), rng)
@@ -285,14 +285,14 @@ class TestMajoranaOperators(unittest.TestCase):
                               for i in range(len(mlist_new))
                               for j in range(len(mlist_new))
                               for k in range(len(mlist_new))))
-            self.assertTrue(np.allclose(ufull.conj().T @ op @ ufull, op_new))
+            self.assertTrue(np.allclose(ufock.conj().T @ op @ ufock, op_new))
             # alternative calculation
             vint_new = np.einsum(u, (3, 0), u, (4, 1), u, (5, 2), vint, (3, 4, 5), (0, 1, 2))
             op_new_alt = expm(sum(vint_new[i, j, k] * (mlist[i] @ mlist[j] @ mlist[k]).toarray()
                                   for i in range(len(mlist))
                                   for j in range(len(mlist))
                                   for k in range(len(mlist))))
-            self.assertTrue(np.allclose(ufull.conj().T @ op @ ufull, op_new_alt))
+            self.assertTrue(np.allclose(ufock.conj().T @ op @ ufock, op_new_alt))
 
 
 if __name__ == "__main__":

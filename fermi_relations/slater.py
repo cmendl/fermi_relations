@@ -36,7 +36,7 @@ def orthonormalize_slater_determinant(phi):
 def fock_orbital_base_change(u):
     """
     Construct the matrix representation of a unitary, single-particle
-    base change matrix described by `u` on the full Fock space.
+    base change matrix described by `u` on the whole Fock space.
     """
     u = np.asarray(u)
     nmodes = u.shape[1]
