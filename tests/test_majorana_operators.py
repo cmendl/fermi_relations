@@ -212,7 +212,8 @@ class TestMajoranaOperators(unittest.TestCase):
             # use diagonalization for matrix exponential
             ufock_alt = np.identity(ufock.shape[0])
             # transpose 'w' for inverse transformation
-            mlist_h = [sum(w[j, i] * mlist[j].toarray() for j in range(len(mlist))) for i in range(2*nmodes)]
+            mlist_h = [sum(w[j, i] * mlist[j].toarray()
+                           for j in range(len(mlist))) for i in range(2*nmodes)]
             for i in range(nmodes):
                 ufock_i = (np.cos(2*lambda_list[i]) * np.identity(ufock.shape[0])
                          - np.sin(2*lambda_list[i]) * (mlist_h[2*i] @ mlist_h[2*i+1]))
@@ -293,6 +294,59 @@ class TestMajoranaOperators(unittest.TestCase):
                                   for j in range(len(mlist))
                                   for k in range(len(mlist))))
             self.assertTrue(np.allclose(ufock.conj().T @ op @ ufock, op_new_alt))
+
+    def test_majorana_string_basis(self):
+        """
+        Test properties of the Majorana string basis.
+        """
+        # number of modes
+        for nmodes in range(1, 5):
+            mbasis = fr.construct_majorana_string_basis(nmodes)
+            # must be unitary up to a scaling factor
+            self.assertEqual(spla.norm(mbasis.conj().T @ mbasis
+                                       - 2**nmodes * sparse.identity(4**nmodes)), 0)
+            # first string must be the identity matrix
+            self.assertEqual(spla.norm(mbasis[:, 0].reshape(2 * (2**nmodes,))
+                                       - sparse.identity(2**nmodes)), 0)
+            # check Hermitian property of each Majorana string
+            for v in mbasis.T:
+                mstring = v.reshape(2 * (2**nmodes,))
+                self.assertEqual(spla.norm(mstring.conj().T - mstring), 0)
+
+    def test_majorana_strings_commute(self):
+        """
+        Test decision function whether two Majorana strings commute.
+        """
+        # number of modes
+        for nmodes in range(1, 5):
+            mbasis = fr.construct_majorana_string_basis(nmodes)
+            for ima in range(2**(2*nmodes)):
+                # corresponding Majorana string
+                msa = mbasis[:, ima].reshape(2 * (2**nmodes,))
+                for imb in range(2**(2*nmodes)):
+                    # corresponding Majorana string
+                    msb = mbasis[:, imb].reshape(2 * (2**nmodes,))
+                    comm_ref = spla.norm(fr.comm(msa, msb)) == 0
+                    self.assertTrue(fr.majorana_strings_commute(ima, imb) == comm_ref)
+
+    def test_majorana_string_products(self):
+        """
+        Test evaluation of products of Majorana strings.
+        """
+        # number of modes
+        for nmodes in range(1, 5):
+            mbasis = fr.construct_majorana_string_basis(nmodes)
+            for ima in range(2**(2*nmodes)):
+                # corresponding Majorana string
+                msa = mbasis[:, ima].reshape(2 * (2**nmodes,))
+                for imb in range(2**(2*nmodes)):
+                    # corresponding Majorana string
+                    msb = mbasis[:, imb].reshape(2 * (2**nmodes,))
+                    # evaluate product based on encoded bit representations
+                    imp, phase = fr.majorana_string_product(ima, imb)
+                    msp = phase * mbasis[:, imp].reshape(2 * (2**nmodes,))
+                    # compare
+                    self.assertEqual(spla.norm(msp - msa @ msb), 0)
 
 
 if __name__ == "__main__":
