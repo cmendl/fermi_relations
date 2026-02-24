@@ -56,9 +56,9 @@ def construct_majorana_string_basis(nmodes: int):
     pmat = sparse.lil_matrix((4**nmodes, 4**nmodes), dtype=complex)
     for m in range(2**(2*nmodes)):
         p = np.identity(2**nmodes, dtype=complex)
-        for i in reversed(range(2*nmodes)):
+        for i in range(2*nmodes):
             if m & (1 << i):
-                p = mlist[i] @ p
+                p = p @ mlist[i]
         # include a potential imaginary unit factor to make the Majorana string Hermitian
         wm = m.bit_count()
         if wm % 4 != 0 and (wm - 1) % 4 != 0:
