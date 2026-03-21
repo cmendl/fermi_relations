@@ -94,11 +94,7 @@ class TestSlaterDeterminants(unittest.TestCase):
         gfock = fr.fock_orbital_base_change(gmat).todense()
 
         # reference matrix
-        gfock_ref = np.array([
-            [1,   0,          0,          0                  ],
-            [0,   gmat[1, 1], gmat[1, 0], 0                  ],
-            [0,   gmat[0, 1], gmat[0, 0], 0                  ],
-            [0,   0,          0,          np.linalg.det(gmat)]])
+        gfock_ref = fr.orbital_rotation_gate(gmat)
 
         # compare
         self.assertTrue(np.allclose(gfock, gfock_ref))

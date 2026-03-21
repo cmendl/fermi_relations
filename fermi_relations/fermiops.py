@@ -63,6 +63,17 @@ def orbital_number_op(x):
     return c @ c.conj().T
 
 
+def orbital_rotation_gate(u):
+    """
+    Quantum gate on two sites representing an orbital rotation.
+    """
+    return np.array([
+        [1,   0,       0,       0               ],
+        [0,   u[1, 1], u[1, 0], 0               ],
+        [0,   u[0, 1], u[0, 0], 0               ],
+        [0,   0,       0,       np.linalg.det(u)]])
+
+
 def total_number_op(nmodes: int):
     """
     Total number operator on the whole Fock space.
