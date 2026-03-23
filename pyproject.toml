@@ -10,6 +10,11 @@ dependencies = [
     "scipy",
 ]
 
+[project.optional-dependencies]
+tests = [
+    "pytest",
+]
+
 [project.urls]
 homepage = "https://github.com/cmendl/fermi_relations"
 repository = "https://github.com/cmendl/fermi_relations"
