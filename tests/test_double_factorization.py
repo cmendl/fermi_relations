@@ -1,3 +1,7 @@
+"""
+Test the double-factorized form of a molecular Hamiltonian interaction term.
+"""
+
 import numpy as np
 import scipy.sparse.linalg as spla
 import fermi_relations as fr
@@ -57,6 +61,7 @@ def test_double_factorization():
         for i in range(len(eig)):
             # orbital number operator w.r.t. new basis
             nlist.append(fr.orbital_number_op(u[:, i]))
+        # pylint: disable=consider-using-enumerate
         for i in range(len(eig)):
             for j in range(len(eig)):
                 # only number operators from the same 'nlist' (common basis) commute

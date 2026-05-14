@@ -1,5 +1,8 @@
+"""
+Test properties and relations of reduced density matrices.
+"""
+
 import numpy as np
-from scipy.stats import unitary_group
 import fermi_relations as fr
 
 
@@ -16,13 +19,9 @@ def test_rdm1_slater():
     # create a random Slater determinant
     # number of particles
     nptcl = 4
-    # random orthonormal states
-    base = unitary_group.rvs(nmodes, random_state=rng)
-    orb = base[:, :nptcl]
-    # create Slater determinant
-    psi = fr.slater_determinant(orb)
+    psi = fr.SlaterDeterminant.random(nmodes, nptcl, orthonormal=True, rng=rng)
 
-    rho = fr.rdm1(nmodes, psi)
+    rho = fr.rdm1(nmodes, psi.to_vector())
 
     # 'rho' must be Hermitian
     assert np.allclose(rho, rho.conj().T)
@@ -35,18 +34,18 @@ def test_rdm1_slater():
     # "natural orbitals" consisting of eigenvectors corresponding to eigenvalue 1
     natural_orb = eigvecs[:, (nmodes - nptcl):]
     # natural orbitals must be a unitary linear combination of the original orbitals
-    u = natural_orb.conj().T @ orb
+    u = natural_orb.conj().T @ psi.phi
     assert np.allclose(u.conj().T @ u, np.identity(u.shape[1]))
 
-    psi_reconstr = fr.slater_determinant(natural_orb)
+    psi_reconstr = fr.SlaterDeterminant(natural_orb, psi.coeff)
     # overlap should be 1 (up to a phase factor)
-    assert abs(abs(np.vdot(psi_reconstr, psi)) - 1) < 1e-14
-    assert abs(abs(fr.vdot_slater(natural_orb, orb)) - 1) < 1e-14
+    assert abs(abs(np.vdot(psi_reconstr.to_vector(), psi.to_vector())) - 1) < 1e-14
+    assert abs(abs(fr.vdot_slater(psi_reconstr, psi)) - 1) < 1e-14
 
     # 'psi' must be an eigenstate with eigenvalue 1 of the natural orbitals number operators
     for norb in natural_orb.T:
         nop = fr.orbital_number_op(norb)
-        assert np.allclose(nop @ psi, psi)
+        assert np.allclose(nop @ psi.to_vector(), psi.to_vector())
 
 
 def test_rdm1_generic():

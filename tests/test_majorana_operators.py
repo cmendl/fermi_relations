@@ -1,3 +1,7 @@
+"""
+Test properties and relations of Majorana operators.
+"""
+
 import numpy as np
 from scipy.linalg import expm, logm, schur, block_diag
 from scipy import sparse

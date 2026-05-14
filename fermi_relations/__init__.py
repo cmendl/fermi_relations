@@ -1,3 +1,7 @@
+"""
+Relations and equalities regarding the fermionic algebra.
+"""
+
 from fermi_relations.fermiops import *
 from fermi_relations.slater import *
 from fermi_relations.rdm import *

@@ -1,6 +1,11 @@
+"""
+Fermionic operators and related functions.
+"""
+
 from functools import cache
 import numpy as np
 from scipy import sparse
+from scipy.sparse import lil_matrix, csr_matrix
 
 
 @cache
@@ -81,6 +86,26 @@ def total_number_op(nmodes: int):
     data = np.array([n.bit_count() for n in range(2**nmodes)], dtype=float)
     ind = np.arange(2**nmodes)
     return sparse.csr_matrix((data, (ind, ind)), shape=(2**nmodes, 2**nmodes))
+
+
+def fock_orbital_base_change(u):
+    """
+    Construct the matrix representation of a unitary, single-particle
+    base change matrix described by `u` on the whole Fock space.
+    """
+    u = np.asarray(u)
+    nmodes = u.shape[1]
+    clist = [orbital_create_op(u[:, i]) for i in range(nmodes)]
+    u_fock = lil_matrix((2**nmodes, 2**nmodes), dtype=u.dtype)
+    for m in range(2**nmodes):
+        # vacuum state
+        psi = np.zeros(2**nmodes)
+        psi[0] = 1
+        for i in reversed(range(nmodes)):
+            if m & (1 << (nmodes - i - 1)):
+                psi = clist[i] @ psi
+        u_fock[m] = psi
+    return csr_matrix(u_fock.T)
 
 
 def kinetic_exponential(nmodes: int, i: int, j: int, t: float):

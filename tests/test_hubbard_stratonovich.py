@@ -1,6 +1,10 @@
+"""
+Test the discrete Hubbard-Stratonovich transformation of the Hubbard interaction
+applied to a Slater determinant.
+"""
+
 import numpy as np
 from scipy.linalg import expm
-from scipy.stats import unitary_group
 import fermi_relations as fr
 
 
@@ -22,10 +26,7 @@ def test_discrete_hubbard_stratonovich():
     # create a random Slater determinant
     # number of particles
     nptcl = 5
-    # random orthonormal states
-    base = unitary_group.rvs(nmodes, random_state=rng)
-    orb = base[:, :nptcl]
-    psi = fr.slater_determinant(orb)
+    psi = fr.SlaterDeterminant.random(nmodes, nptcl, orthonormal=True, rng=rng)
 
     t = 0.8
 
@@ -41,7 +42,7 @@ def test_discrete_hubbard_stratonovich():
                 continue
 
             # time-evolved state governed by the Hubbard interaction term, as reference
-            psi_t_ref = fr.hubbard_interaction_exponential(nmodes, i, j, t) @ psi
+            psi_t_ref = fr.hubbard_interaction_exponential(nmodes, i, j, t) @ psi.to_vector()
 
             # use Hubbard-Stratonovich transformation
             # to represent time-evolved state as a sum of two Slater determinants
@@ -52,8 +53,8 @@ def test_discrete_hubbard_stratonovich():
             b[i, i] = v
             b[j, j] = u
             psi_t = 0.5 * np.exp(-0.25j * t) * (
-                  fr.slater_determinant(a @ orb)
-                + fr.slater_determinant(b @ orb))
+                  psi.transform_by(a).to_vector()
+                + psi.transform_by(b).to_vector())
 
             # compare
             assert np.allclose(psi_t, psi_t_ref)

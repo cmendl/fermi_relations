@@ -1,6 +1,10 @@
-from fermi_relations import construct_fermionic_operators
+"""
+Fermionic Majorana operators and related functions.
+"""
+
 import numpy as np
 from scipy import sparse
+from fermi_relations import construct_fermionic_operators
 
 
 def construct_majorana_operators(nmodes: int):

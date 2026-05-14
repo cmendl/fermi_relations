@@ -1,6 +1,10 @@
+"""
+Test the tensor-hypercontraction form of a molecular Hamiltonian interaction term.
+"""
+
 import numpy as np
 import scipy.sparse.linalg as spla
-from scipy.stats import ortho_group, unitary_group
+from scipy.stats import ortho_group
 from scipy.linalg import expm
 import fermi_relations as fr
 
@@ -70,22 +74,19 @@ def test_tensor_hypercontraction():
             # create a random Slater determinant
             # number of particles
             nptcl = 4
-            # random orthonormal states
-            base = unitary_group.rvs(nmodes, random_state=rng)
-            orb_init = base[:, :nptcl]
-            psi = fr.slater_determinant(orb_init)
+            psi_init = fr.SlaterDeterminant.random(nmodes, nptcl, orthonormal=True, rng=rng)
 
             t = 0.8
 
             # reference time-evolved state
-            psi_t_ref = expm(-1j * t * vop.todense()) @ psi
+            psi_t_ref = expm(-1j * t * vop.todense()) @ psi_init.to_vector()
 
             # time evolution using Slater determinants
-            coeff_list, orb_list = apply_thc_evolution_slater(kernel, transform, orb_init, t)
+            psi_list = apply_thc_evolution_slater(kernel, transform, psi_init, t)
             # orbital bases must be isometries
-            for orb in orb_list:
-                assert np.allclose(orb.conj().T @ orb, np.identity(orb.shape[1]))
-            psi_t = sum(c * fr.slater_determinant(orb) for c, orb in zip(coeff_list, orb_list))
+            for psi in psi_list:
+                assert np.allclose(psi.phi.conj().T @ psi.phi, np.identity(psi.phi.shape[1]))
+            psi_t = sum(psi.to_vector() for psi in psi_list)
             # compare
             assert np.allclose(psi_t, psi_t_ref)
 
@@ -115,7 +116,11 @@ def _random_thc_interaction(nmodes: int, rank: int, tau: float,
     return kernel, transform
 
 
-def apply_thc_evolution_slater(kernel, transform, orb_init, t: float):
+def apply_thc_evolution_slater(
+        kernel, transform,
+        psi_init: fr.SlaterDeterminant,
+        t: float
+        ) -> list[fr.SlaterDeterminant]:
     """
     Time-evolve a Slater determinant governed by the interaction in tensor-hypercontraction form,
     returning the evolved state as a list of Slater determinants.
@@ -134,9 +139,8 @@ def apply_thc_evolution_slater(kernel, transform, orb_init, t: float):
     u[:, :rank] = transform
     assert np.allclose(u.T @ u, np.identity(nmodes))
 
-    # represent sum of Slater determinants by coefficients and orbital basis states
-    orb_list = [u.T @ orb_init]  # switch to eigenbasis of number operators
-    coeff_list = [1]
+    # initial sum of Slater determinants
+    psi_list = [psi_init.transform_by(u.T)]  # switch to eigenbasis of number operators
 
     for i in range(rank):
         for j in range(rank):
@@ -146,7 +150,7 @@ def apply_thc_evolution_slater(kernel, transform, orb_init, t: float):
                 x = np.exp(-1j * tau)
                 a = np.identity(nmodes, dtype=complex)
                 a[i, i] = x
-                orb_list = [a @ orb for orb in orb_list]
+                psi_list = [psi.transform_by(a) for psi in psi_list]
             else:
                 # note: mu is complex-valued in general
                 mu = np.arccos(np.exp(0.5j * tau))
@@ -161,22 +165,13 @@ def apply_thc_evolution_slater(kernel, transform, orb_init, t: float):
                 a[j, j] = y
                 b[i, i] = y
                 b[j, j] = x
-                orb_list_next = []
-                coeff_list_next = []
-                for c, orb in zip(coeff_list, orb_list):
-                    orb_a, ovl_a = fr.orthonormalize_slater_determinant(a @ orb)
-                    orb_b, ovl_b = fr.orthonormalize_slater_determinant(b @ orb)
-                    orb_list_next.append(orb_a)
-                    orb_list_next.append(orb_b)
-                    # phase factor always seems to be real;
-                    # could be absorbed into orbitals
-                    coeff_list_next.append(0.5 * c * ovl_a.real)
-                    coeff_list_next.append(0.5 * c * ovl_b.real)
-                orb_list = orb_list_next
-                coeff_list = coeff_list_next
-    assert len(coeff_list) == len(orb_list)
+                psi_list_next = []
+                for psi in psi_list:
+                    psi_list_next.append(0.5 * psi.transform_by(a).orthonormalize_states())
+                    psi_list_next.append(0.5 * psi.transform_by(b).orthonormalize_states())
+                psi_list = psi_list_next
 
     # undo base change
-    orb_list = [u @ orb for orb in orb_list]
+    psi_list = [psi.transform_by(u) for psi in psi_list]
 
-    return coeff_list, orb_list
+    return psi_list

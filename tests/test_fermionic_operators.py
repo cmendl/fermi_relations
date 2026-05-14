@@ -1,7 +1,125 @@
+"""
+Test fermionic operators and related functions.
+"""
+
 import numpy as np
 from scipy.linalg import expm
+from scipy import sparse
+import scipy.sparse.linalg as spla
 from scipy.stats import unitary_group
 import fermi_relations as fr
+
+
+def test_total_number_op():
+    """
+    Test construction of the total number operator.
+    """
+    for nmodes in range(1, 8):
+        _, _, nlist = fr.construct_fermionic_operators(nmodes)
+        ntot = fr.total_number_op(nmodes)
+        assert spla.norm(ntot - sum(nlist)) == 0
+
+
+def test_givens_rotation():
+    """
+    Test matrix representation of a single-particle base change
+    described by a Givens rotation.
+    """
+    rng = np.random.default_rng()
+
+    # generalized Givens rotation
+    gmat = unitary_group.rvs(2, random_state=rng)
+    assert np.allclose(gmat.conj().T @ gmat, np.identity(2))
+
+    # corresponding base change matrix on two-mode Fock space
+    gfock = fr.fock_orbital_base_change(gmat).todense()
+
+    # reference matrix
+    gfock_ref = fr.orbital_rotation_gate(gmat)
+
+    # compare
+    assert np.allclose(gfock, gfock_ref)
+
+
+def test_orbital_base_change():
+    """
+    Test matrix representation of a single-particle base change
+    on overall Fock space.
+    """
+    rng = np.random.default_rng()
+
+    # number of modes
+    nmodes = 5
+
+    # for a single-particle identity map, the overall base change matrix
+    # should likewise be the identity map
+    ufock = fr.fock_orbital_base_change(np.identity(nmodes))
+    assert spla.norm(ufock - sparse.identity(2**nmodes)) == 0
+
+    # random orthonormal states
+    u = unitary_group.rvs(nmodes, random_state=rng)
+    assert np.allclose(u.conj().T @ u, np.identity(nmodes))
+
+    ufock = fr.fock_orbital_base_change(u)
+    # must likewise be unitary
+    assert spla.norm(ufock.conj().T @ ufock - sparse.identity(2**nmodes)) < 1e-13
+
+    idx = [0, 2, 3]
+    psi_ref = fr.SlaterDeterminant(u[:, idx]).to_vector()
+    # encode indices in binary format
+    i = sum(1 << (nmodes - j - 1) for j in idx)
+    # need to reshape since slicing returns matrix (different from numpy convention)
+    psi = np.reshape(ufock[:, i].toarray(), -1)
+    # compare
+    assert np.allclose(psi, psi_ref)
+
+    # base change applied to creation and annihilation operators
+    clist, alist, _ = fr.construct_fermionic_operators(nmodes)
+    for i in range(nmodes):
+        assert spla.norm(ufock @ clist[i] @ ufock.conj().T
+                         - fr.orbital_create_op(u[:, i])) < 1e-13
+        assert spla.norm(ufock @ alist[i] @ ufock.conj().T
+                         - fr.orbital_annihil_op(u[:, i])) < 1e-13
+
+    # compose two base changes
+    v = unitary_group.rvs(nmodes, random_state=rng)
+    vfock = fr.fock_orbital_base_change(v)
+    assert spla.norm(ufock @ vfock
+                     - fr.fock_orbital_base_change(u @ v)) < 1e-13
+
+
+def test_skew_number_op():
+    """
+    Test action of a number operator w.r.t.
+    a non-orthogonal basis state on a Slater determinant.
+    """
+    rng = np.random.default_rng()
+
+    # number of modes
+    nmodes = 7
+    # number of particles
+    nptcl = 3
+    # random orthonormal states
+    base = unitary_group.rvs(nmodes, random_state=rng)
+    orb = base[:, :nptcl]
+
+    # create state vector representation of a Slater determinant
+    psi = fr.SlaterDeterminant(orb).to_vector()
+
+    # non-orthogonal state
+    x = fr.crandn(nmodes, rng)
+    x /= np.linalg.norm(x)
+    n = fr.orbital_number_op(x)
+
+    # manually construct sum of Slater determinants by projecting one orbital at a time onto 'x'
+    n_psi = 0
+    for i in range(nptcl):
+        n_orbs_i = np.concatenate((orb[:, :i],
+                                   np.reshape(np.vdot(x, orb[:, i]) * x, (nmodes, 1)),
+                                   orb[:, i+1:]), axis=1)
+        n_psi += fr.SlaterDeterminant(n_orbs_i).to_vector()
+    # compare
+    assert np.allclose(n_psi, n @ psi)
 
 
 def test_free_fermion_hamiltonian():
@@ -26,7 +144,7 @@ def test_free_fermion_hamiltonian():
     base = unitary_group.rvs(nmodes, random_state=rng)
     orb = base[:, :nptcl]
     # create Slater determinant
-    psi = fr.slater_determinant(orb)
+    psi = fr.SlaterDeterminant(orb).to_vector()
 
     # energy expectation value
     en = np.vdot(psi, hfock.toarray() @ psi)
@@ -36,7 +154,7 @@ def test_free_fermion_hamiltonian():
     psi_t = expm(-1j*hfock.toarray()) @ psi
     # alternative construction: time-evolve single-particle states individually
     orb_t = expm(-1j*h) @ orb
-    psi_t_alt = fr.slater_determinant(orb_t)
+    psi_t_alt = fr.SlaterDeterminant(orb_t).to_vector()
     # compare
     assert np.allclose(psi_t_alt, psi_t)
 

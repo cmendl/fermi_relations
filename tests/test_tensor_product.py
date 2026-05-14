@@ -1,3 +1,7 @@
+"""
+Test the matrix representation of the fermionic tensor product of an operator.
+"""
+
 import numpy as np
 from scipy.stats import unitary_group
 import fermi_relations as fr
@@ -40,7 +44,7 @@ def test_twofold_tensor_product():
     # random orthonormal states
     phi = unitary_group.rvs(nmodes, random_state=rng)[:, :2]
 
-    psi2 = a_tensor @ fr.slater_determinant(phi)
+    psi2 = a_tensor @ fr.SlaterDeterminant(phi).to_vector()
 
     # reference calculation
     psi = a @ phi

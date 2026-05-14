@@ -1,3 +1,7 @@
+"""
+Test (anti-)commutation relations of fermionic operators.
+"""
+
 import numpy as np
 from scipy import sparse
 import scipy.sparse.linalg as spla

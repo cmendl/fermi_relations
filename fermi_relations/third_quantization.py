@@ -1,3 +1,7 @@
+"""
+"Third quantization" fermionic operators.
+"""
+
 from functools import cache
 import numpy as np
 from scipy import sparse

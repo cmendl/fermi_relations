@@ -1,3 +1,7 @@
+"""
+Test "third quantization" fermionic operators.
+"""
+
 from scipy import sparse
 import scipy.sparse.linalg as spla
 import fermi_relations as fr

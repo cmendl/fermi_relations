@@ -1,5 +1,9 @@
-from fermi_relations.fermiops import construct_fermionic_operators
+"""
+Reduced density matrices.
+"""
+
 import numpy as np
+from fermi_relations.fermiops import construct_fermionic_operators
 
 
 def rdm1(nmodes: int, psi):

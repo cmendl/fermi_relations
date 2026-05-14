@@ -1,3 +1,7 @@
+"""
+Fermionic tensor products of operators.
+"""
+
 import numpy as np
 
 
