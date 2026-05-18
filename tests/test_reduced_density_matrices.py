@@ -21,10 +21,16 @@ def test_rdm1_slater():
     nptcl = 4
     psi = fr.SlaterDeterminant.random(nmodes, nptcl, orthonormal=True, rng=rng)
 
-    rho = fr.rdm1(nmodes, psi.to_vector())
+    rho = fr.rdm1_slater_sum([psi])
+
+    # compare with reference calculation based on state vector representation
+    assert np.allclose(rho, fr.rdm1(nmodes, psi.to_vector()))
 
     # 'rho' must be Hermitian
     assert np.allclose(rho, rho.conj().T)
+
+    # trace must be equal to the number of particles
+    assert abs(np.trace(rho) - nptcl) < 1e-14
 
     # eigenvalues of the reduced density matrix of a Slater determinant must be 0 or 1
     eigvals, eigvecs = np.linalg.eigh(rho)
@@ -32,7 +38,7 @@ def test_rdm1_slater():
     assert np.allclose(eigvals, eigvals_ref)
 
     # "natural orbitals" consisting of eigenvectors corresponding to eigenvalue 1
-    natural_orb = eigvecs[:, (nmodes - nptcl):]
+    natural_orb = eigvecs[:, -nptcl:]
     # natural orbitals must be a unitary linear combination of the original orbitals
     u = natural_orb.conj().T @ psi.phi
     assert np.allclose(u.conj().T @ u, np.identity(u.shape[1]))
@@ -46,6 +52,12 @@ def test_rdm1_slater():
     for norb in natural_orb.T:
         nop = fr.orbital_number_op(norb)
         assert np.allclose(nop @ psi.to_vector(), psi.to_vector())
+
+    # alternative calculation using predefined function
+    psi_reconstr_alt = fr.project_natural_orbitals([psi])
+    assert abs(abs(psi_reconstr_alt.coeff) - 1) < 1e-14
+    # overlap should be 1 (up to a phase factor)
+    assert abs(abs(fr.vdot_slater(psi_reconstr, psi_reconstr_alt)) - 1) < 1e-14
 
 
 def test_rdm1_generic():
@@ -70,6 +82,56 @@ def test_rdm1_generic():
     # eigenvalues of 'rho' must be in the interval [0, 1]
     eigvals = np.linalg.eigvalsh(rho)
     assert all(0 <= eigvals) and all(eigvals <= 1)
+
+
+def test_quadratic_fermionic_average_slater():
+    """
+    Test evaluation of quadratic fermionic operator averages for Slater determinants.
+    """
+    rng = np.random.default_rng()
+
+    # number of modes
+    for nmodes in range(5, 8):
+        # number of particles
+        for nptcl0 in range(nmodes + 1):
+            for nptcl1 in range(nmodes + 1):
+                for orthonormal in [False, True]:
+                    chi = fr.SlaterDeterminant.random(nmodes, nptcl0, orthonormal=False, rng=rng)
+                    psi = fr.SlaterDeterminant.random(nmodes, nptcl1,
+                                                      orthonormal=orthonormal, rng=rng)
+                    rho = fr.quadratic_fermionic_average_slater(chi, psi)
+                    # reference calculation based on state vectors
+                    rho_ref = fr.quadratic_fermionic_average(
+                        nmodes, chi.to_vector(), psi.to_vector())
+                    # compare
+                    assert np.allclose(rho, rho_ref)
+
+
+def test_rdm1_slater_sum():
+    """
+    Test evaluation of the one-body reduced density matrix
+    for a quantum state represented as a sum of Slater determinants.
+    """
+    rng = np.random.default_rng()
+
+    # number of modes
+    nmodes = 7
+
+    for orthonormal in [False, True]:
+        # number of particles
+        for nptcl in range(nmodes + 1):
+            # create random Slater determinants
+            psi_list = [fr.SlaterDeterminant.random(
+                nmodes, nptcl, orthonormal=orthonormal, rng=rng) for _ in range(5)]
+            # compute the one-body reduced density matrix
+            rho = fr.rdm1_slater_sum(psi_list)
+            # 'rho' must be Hermitian
+            assert np.allclose(rho, rho.conj().T)
+            # reference calculation
+            psi_vec_ref = sum(psi.to_vector() for psi in psi_list)
+            rho_ref = fr.rdm1(nmodes, psi_vec_ref)
+            # compare
+            assert np.allclose(rho, rho_ref)
 
 
 def test_rdm2():

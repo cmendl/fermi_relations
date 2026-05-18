@@ -19,14 +19,15 @@ def test_slater_determinant():
     for orthonormal in [False, True]:
         # create a random Slater determinant
         psi = fr.SlaterDeterminant.random(nmodes, nptcl, orthonormal=orthonormal, rng=rng)
-        assert psi.nptcl == nptcl
+        assert psi.nmodes == nmodes
+        assert psi.nptcl  == nptcl
         if orthonormal:
             # must be normalized
             assert abs(psi.norm() - 1) < 1e-13
         # convert to a state vector
         psi_vec_ref = psi.to_vector()
         assert abs(psi.norm() - np.linalg.norm(psi_vec_ref)) < 1e-13
-        psi.orthonormalize_states()
+        psi.orthonormalize_orbitals()
         assert abs(abs(psi.coeff) - np.linalg.norm(psi_vec_ref)) < 1e-13
         psi_vec = psi.to_vector()
         assert np.allclose(psi_vec, psi_vec_ref)

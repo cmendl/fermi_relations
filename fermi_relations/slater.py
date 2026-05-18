@@ -18,6 +18,13 @@ class SlaterDeterminant:
         self.coeff = coeff
 
     @property
+    def nmodes(self) -> int:
+        """
+        Number of fermionic modes (number of orbitals).
+        """
+        return int(self.phi.shape[0])
+
+    @property
     def nptcl(self) -> int:
         """
         Number of particles in the Slater determinant.
@@ -43,7 +50,17 @@ class SlaterDeterminant:
             # random generic states
             return cls(0.5 * crandn((nmodes, nptcl), rng), crandn(rng=rng))
 
-    def orthonormalize_states(self):
+    def is_orthonormal(self) -> bool:
+        """
+        Check if the orbital states are orthonormalized.
+
+        For orthonormalized orbital states, the logical norm
+        is the absolute value of the coefficient.
+        """
+        # check whether 'phi' is an isometry
+        return np.allclose(self.phi.conj().T @ self.phi, np.identity(self.phi.shape[1]))
+
+    def orthonormalize_orbitals(self):
         """
         In-place orthonormalize the orbital states defining the Slater determinant,
         and absorb the normalization factor into the coefficient.
@@ -59,6 +76,12 @@ class SlaterDeterminant:
         Norm of the Slater determinant.
         """
         return abs(self.coeff) * np.sqrt(abs(np.linalg.det(self.phi.conj().T @ self.phi)))
+
+    def __neg__(self):
+        """
+        Logical negation of the Slater determinant.
+        """
+        return SlaterDeterminant(self.phi, -self.coeff)
 
     def __rmul__(self, factor: float | complex):
         """

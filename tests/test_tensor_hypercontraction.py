@@ -167,8 +167,8 @@ def apply_thc_evolution_slater(
                 b[j, j] = x
                 psi_list_next = []
                 for psi in psi_list:
-                    psi_list_next.append(0.5 * psi.transform_by(a).orthonormalize_states())
-                    psi_list_next.append(0.5 * psi.transform_by(b).orthonormalize_states())
+                    psi_list_next.append(0.5 * psi.transform_by(a).orthonormalize_orbitals())
+                    psi_list_next.append(0.5 * psi.transform_by(b).orthonormalize_orbitals())
                 psi_list = psi_list_next
 
     # undo base change
