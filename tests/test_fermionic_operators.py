@@ -150,13 +150,27 @@ def test_free_fermion_hamiltonian():
     en = np.vdot(psi, hfock.toarray() @ psi)
     assert abs(en - np.trace(orb.conj().T @ h @ orb)) < 1e-14
 
+    # time evolution operator on the whole Fock space
+    ufock = expm(-1j*hfock.toarray())
+
     # time-evolved state
-    psi_t = expm(-1j*hfock.toarray()) @ psi
+    psi_t = ufock @ psi
     # alternative construction: time-evolve single-particle states individually
     orb_t = expm(-1j*h) @ orb
     psi_t_alt = fr.SlaterDeterminant(orb_t).to_vector()
     # compare
     assert np.allclose(psi_t_alt, psi_t)
+
+    # express the time evolution operator in terms of "orbital" number operators
+    # diagonalize 'h'
+    eigvals, eigvecs = np.linalg.eigh(h)
+    nlist_orb = [fr.orbital_number_op(x) for x in eigvecs.T]
+    ufock_alt = np.identity(2**nmodes)
+    for i in range(nmodes):
+        ufock_alt = ufock_alt @ ((np.identity(2**nmodes) - nlist_orb[i])
+                                + np.exp(-1j*eigvals[i]) * nlist_orb[i])
+    # compare
+    assert np.allclose(ufock_alt, ufock)
 
 
 def test_thouless_theorem():
