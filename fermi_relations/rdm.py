@@ -36,10 +36,18 @@ def quadratic_fermionic_average_slater(chi: SlaterDeterminant, psi: SlaterDeterm
     Evaluate the matrix `<chi | a_j^{dagger} a_i | phi>_{ij}`
     for two Slater determinants 'chi' and 'psi'.
     """
-    assert chi.nmodes == psi.nmodes
+    return _quadratic_fermionic_average_slater_sum([chi], psi)
+
+
+def _quadratic_fermionic_average_slater_sum(chi_list: list[SlaterDeterminant], psi: SlaterDeterminant):
+    """
+    Evaluate the matrix `sum_k <chi_k | a_j^{dagger} a_i | phi>_{ij}`
+    for a list of Slater determinants 'chi_k' and a Slater determinant 'psi'.
+    """
+    assert all(chi.nmodes == psi.nmodes for chi in chi_list)
     nmodes = psi.nmodes
-    if chi.nptcl != psi.nptcl:
-        return np.zeros(2 * (psi.nmodes,))
+    # retain Slater determinants with matching particle number
+    chi_list = [chi for chi in chi_list if chi.nptcl == psi.nptcl]
     nptcl = psi.nptcl
     if psi.is_orthonormal():
         psi_orth = psi
@@ -54,10 +62,10 @@ def quadratic_fermionic_average_slater(chi: SlaterDeterminant, psi: SlaterDeterm
     assert np.allclose(basis.conj().T @ basis, np.identity(basis.shape[1]))
     rho = np.array(
         [[0 if i >= nptcl else
-          vdot_slater(chi, SlaterDeterminant(
+          sum(vdot_slater(chi, SlaterDeterminant(
             np.concatenate((basis[:, :i],
                             np.reshape(basis[:, j], (nmodes, 1)),
-                            basis[:, i+1:nptcl]), axis=1), psi_orth.coeff))
+                            basis[:, i+1:nptcl]), axis=1), psi_orth.coeff)) for chi in chi_list)
           for j in range(nmodes)]
           for i in range(nmodes)])
     return basis @ rho @ basis.conj().T
@@ -68,7 +76,7 @@ def rdm1_slater_sum(psi: list[SlaterDeterminant]):
     Compute the one-body reduced density matrix
     of the quantum state 'psi' represented as a sum of Slater determinants.
     """
-    return sum(quadratic_fermionic_average_slater(x, y) for x in psi for y in psi)
+    return sum(_quadratic_fermionic_average_slater_sum(psi, x) for x in psi)
 
 
 def project_natural_orbitals(psi_list: list[SlaterDeterminant]) -> SlaterDeterminant:
