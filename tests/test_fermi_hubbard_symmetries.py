@@ -69,11 +69,10 @@ def construct_fermi_hubbard_1d_hamiltonian(nsites: int, t: float, u: float, mu: 
     # interaction u (n_up - 1/2) (n_dn - 1/2) and number operator - mu (n_up + n_dn)
     hamiltonian = sum(-t * (clist[j] @ alist[j+2] + clist[j+2] @ alist[j])
                       for j in range(2*nsites - 2)) \
-                + sum((u * (nlist[j]   - 0.5*sparse.identity(4**nsites)) \
-                         @ (nlist[j+1] - 0.5*sparse.identity(4**nsites)) \
-                       - mu * (nlist[j] + nlist[j+1]))
+                + sum(u * (nlist[j]   - 0.5*sparse.identity(4**nsites)) \
+                        @ (nlist[j+1] - 0.5*sparse.identity(4**nsites)) \
+                      - mu * (nlist[j] + nlist[j+1])
                       for j in range(0, 2*nsites, 2))
-    hamiltonian.eliminate_zeros()
     return hamiltonian
 
 
