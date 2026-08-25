@@ -79,7 +79,7 @@ def test_tensor_hypercontraction():
             t = 0.8
 
             # reference time-evolved state
-            psi_t_ref = expm(-1j * t * vop.todense()) @ psi_init.to_vector()
+            psi_t_ref = expm(-1j * t * vop.toarray()) @ psi_init.to_vector()
 
             # time evolution using Slater determinants
             psi_list = apply_thc_evolution_slater(kernel, transform, psi_init, t)

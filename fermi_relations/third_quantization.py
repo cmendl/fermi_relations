@@ -29,11 +29,11 @@ def construct_third_quantization_operators(nmodes: int):
             jms = mbasis[:, jm].reshape(2 * (2**nmodes,))
             if (jm & (1 << i)) == 0:
                 c[:, jm] = mbasis.conj().T @ (mlist[i] @ jms).toarray().reshape(-1) / 2**nmodes
-        clist.append(sparse.csr_matrix(c))
+        clist.append(sparse.csr_array(c))
     # corresponding annihilation operators
-    alist = [sparse.csr_matrix(c.conj().T) for c in clist]
+    alist = [sparse.csr_array(c.conj().T) for c in clist]
     # corresponding number operators
-    nlist = [sparse.csr_matrix(c @ c.conj().T) for c in clist]
+    nlist = [sparse.csr_array(c @ c.conj().T) for c in clist]
     for n in nlist:
         n.eliminate_zeros()
     return clist, alist, nlist

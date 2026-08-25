@@ -24,7 +24,7 @@ def test_unitary_tensor_product():
     u_tensor = fr.tensor_product(u)
 
     # compare
-    assert np.allclose(u_tensor, u_fock_ref.todense())
+    assert np.allclose(u_tensor, u_fock_ref.toarray())
 
 
 def test_twofold_tensor_product():

@@ -32,7 +32,7 @@ def test_givens_rotation():
     assert np.allclose(gmat.conj().T @ gmat, np.identity(2))
 
     # corresponding base change matrix on two-mode Fock space
-    gfock = fr.fock_orbital_base_change(gmat).todense()
+    gfock = fr.fock_orbital_base_change(gmat).toarray()
 
     # reference matrix
     gfock_ref = fr.orbital_rotation_gate(gmat)
@@ -167,8 +167,8 @@ def test_free_fermion_hamiltonian():
     nlist_orb = [fr.orbital_number_op(x) for x in eigvecs.T]
     ufock_alt = np.identity(2**nmodes)
     for i in range(nmodes):
-        ufock_alt = ufock_alt @ ((np.identity(2**nmodes) - nlist_orb[i])
-                                + np.exp(-1j*eigvals[i]) * nlist_orb[i])
+        ufock_alt = ufock_alt @ (np.identity(2**nmodes)
+                                 - (1 - np.exp(-1j*eigvals[i])) * nlist_orb[i])
     # compare
     assert np.allclose(ufock_alt, ufock)
 

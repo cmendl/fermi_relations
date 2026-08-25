@@ -57,7 +57,7 @@ def construct_majorana_string_basis(nmodes: int):
     Construct an operator basis of Majorana strings, stored as columns in a matrix.
     """
     mlist = construct_majorana_operators(nmodes)
-    pmat = sparse.lil_matrix((4**nmodes, 4**nmodes), dtype=complex)
+    pmat = sparse.lil_array((4**nmodes, 4**nmodes), dtype=complex)
     for m in range(2**(2*nmodes)):
         p = np.identity(2**nmodes, dtype=complex)
         for i in range(2*nmodes):
@@ -68,7 +68,7 @@ def construct_majorana_string_basis(nmodes: int):
         if wm % 4 != 0 and (wm - 1) % 4 != 0:
             p *= 1j
         pmat[m] = p.reshape(-1)
-    return sparse.csr_matrix(pmat.T)
+    return sparse.csr_array(pmat.T)
 
 
 def majorana_strings_commute(ima: int, imb: int) -> bool:
